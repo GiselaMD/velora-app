@@ -1,48 +1,52 @@
+import Foundation
 import ExpoModulesCore
+import MediaPipeTasksVision
 
 public class LocalPoseEstimationModule: Module {
-  // Each module class must implement the definition function. The definition consists of components
-  // that describes the module's functionality and behavior.
-  // See https://docs.expo.dev/modules/module-api for more details about available components.
+  private var poseLandmarker: PoseLandmarker?
+
   public func definition() -> ModuleDefinition {
-    // Sets the name of the module that JavaScript code will use to refer to the module. Takes a string as an argument.
-    // Can be inferred from module's class name, but it's recommended to set it explicitly for clarity.
-    // The module will be accessible from `requireNativeModule('LocalPoseEstimation')` in JavaScript.
-    Name("LocalPoseEstimation")
+    Name("LocalPoseEstimationModule")
 
-    // Sets constant properties on the module. Can take a dictionary or a closure that returns a dictionary.
-    Constants([
-      "PI": Double.pi
-    ])
-
-    // Defines event names that the module can send to JavaScript.
-    Events("onChange")
-
-    // Defines a JavaScript synchronous function that runs the native code on the JavaScript thread.
-    Function("hello") {
-      return "Hello world! 👋"
-    }
-
-    // Defines a JavaScript function that always returns a Promise and whose native code
-    // is by default dispatched on the different thread than the JavaScript runtime runs on.
-    AsyncFunction("setValueAsync") { (value: String) in
-      // Send an event to JavaScript.
-      self.sendEvent("onChange", [
-        "value": value
-      ])
-    }
-
-    // Enables the module to be used as a native view. Definition components that are accepted as part of the
-    // view definition: Prop, Events.
-    View(LocalPoseEstimationView.self) {
-      // Defines a setter for the `url` prop.
-      Prop("url") { (view: LocalPoseEstimationView, url: URL) in
-        if view.webView.url != url {
-          view.webView.load(URLRequest(url: url))
-        }
+    Function("estimatePose") { (base64Image: String) -> [[String: Any]] in
+      // Decode base64 string
+      guard let imageData = Data(base64Encoded: base64Image),
+            let uiImage = UIImage(data: imageData),
+            let cgImage = uiImage.cgImage else {
+        throw PoseError.invalidImage
       }
 
-      Events("onLoad")
+      // Initialize PoseLandmarker if not already
+      if poseLandmarker == nil {
+        let options = PoseLandmarkerOptions()
+        options.runningMode = .image
+        options.modelAssetPath = Bundle.main.path(forResource: "pose_landmarker_full.task", ofType: nil)!
+        poseLandmarker = try PoseLandmarker(options: options)
+      }
+
+      // Perform pose estimation
+      let mpImage = try MPImage(image: cgImage)
+      let result = try poseLandmarker!.detect(image: mpImage)
+
+      guard let landmarks = result.poseLandmarks.first else {
+        return []
+      }
+
+      // Map landmarks to array of dictionaries
+      let mapped = landmarks.map { lm in
+        return [
+          "x": lm.x,
+          "y": lm.y,
+          "z": lm.z,
+          "visibility": lm.visibility ?? 1.0
+        ]
+      }
+
+      return mapped
     }
+  }
+
+  enum PoseError: Error {
+    case invalidImage
   }
 }
