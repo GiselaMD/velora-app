@@ -9,7 +9,6 @@ import {
   Dimensions,
 } from "react-native";
 import { useState, useRef } from "react";
-import MyModule from '../modules/local-pose-estimation';
 
 
 const quotes = [

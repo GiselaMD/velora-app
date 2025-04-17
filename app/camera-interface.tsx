@@ -12,7 +12,7 @@ import {
 import { CameraView, useCameraPermissions } from "expo-camera";
 import Svg, { Circle, Line } from "react-native-svg";
 import { router } from "expo-router";
-import LocalPoseEstimationModule from "../modules/local-pose-estimation";
+// import MediaPipeLocalModule from "@/modules/mediapipe-local";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -72,6 +72,15 @@ export default function CameraInterface() {
 
   const cameraRef = useRef<CameraView>(null);
   const lastProcessedTime = useRef(0);
+
+
+  // useEffect(() => {
+  //   MediaPipeLocalModule.testModelLoad().then((res) => {
+  //     console.log('Model Load Test Result:', res);
+  //   }).catch((err) => {
+  //     console.error('Model Load Test Error:', err);
+  //   });
+  // }, []);
 
   const calculateBodyAngles = useCallback((keypoints: Keypoint[]) => {
     const calculateAngle = (
