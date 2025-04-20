@@ -12,7 +12,7 @@ public class MediapipePoseEstimationModule: Module {
       try? self.loadLandmarker()
     }
 
-      Function("detectPose") { (imageBase64: String) -> [[[String: Any]]] in
+    Function("detectPose") { (imageBase64: String) -> [[[String: Any]]] in
       guard let landmarker = self.landmarker else {
           throw Exception(file: "PoseLandmarker: Landmarker not initialized")
       }
