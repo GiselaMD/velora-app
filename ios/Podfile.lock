@@ -63,6 +63,12 @@ PODS:
   - hermes-engine (0.76.9):
     - hermes-engine/Pre-built (= 0.76.9)
   - hermes-engine/Pre-built (0.76.9)
+  - MediapipePoseEstimation (1.0.0):
+    - ExpoModulesCore
+    - MediaPipeTasksVision (= 0.10.12)
+  - MediaPipeTasksCommon (0.10.12)
+  - MediaPipeTasksVision (0.10.12):
+    - MediaPipeTasksCommon (= 0.10.12)
   - RCT-Folly (2024.10.14.00):
     - boost
     - DoubleConversion
@@ -1885,6 +1891,7 @@ DEPENDENCIES:
   - fmt (from `../node_modules/react-native/third-party-podspecs/fmt.podspec`)
   - glog (from `../node_modules/react-native/third-party-podspecs/glog.podspec`)
   - hermes-engine (from `../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)
+  - MediapipePoseEstimation (from `../modules/mediapipe-pose-estimation/ios`)
   - RCT-Folly (from `../node_modules/react-native/third-party-podspecs/RCT-Folly.podspec`)
   - RCT-Folly/Fabric (from `../node_modules/react-native/third-party-podspecs/RCT-Folly.podspec`)
   - RCTDeprecation (from `../node_modules/react-native/ReactApple/Libraries/RCTFoundation/RCTDeprecation`)
@@ -1952,6 +1959,8 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
+    - MediaPipeTasksCommon
+    - MediaPipeTasksVision
     - SocketRocket
     - ZXingObjC
 
@@ -2003,6 +2012,8 @@ EXTERNAL SOURCES:
   hermes-engine:
     :podspec: "../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec"
     :tag: hermes-2024-11-12-RNv0.76.2-5b4aa20c719830dcf5684832b89a6edb95ac3d64
+  MediapipePoseEstimation:
+    :path: "../modules/mediapipe-pose-estimation/ios"
   RCT-Folly:
     :podspec: "../node_modules/react-native/third-party-podspecs/RCT-Folly.podspec"
   RCTDeprecation:
@@ -2152,6 +2163,9 @@ SPEC CHECKSUMS:
   fmt: 01b82d4ca6470831d1cc0852a1af644be019e8f6
   glog: 08b301085f15bcbb6ff8632a8ebaf239aae04e6a
   hermes-engine: 9e868dc7be781364296d6ee2f56d0c1a9ef0bb11
+  MediapipePoseEstimation: 995726346a4a2dbd502130006b46698131ac299c
+  MediaPipeTasksCommon: 254e6bff77804b262f6ecf180477142ea551e802
+  MediaPipeTasksVision: 78d5c47cd7996b4d815bacba0a52dbf01458dfaf
   RCT-Folly: ea9d9256ba7f9322ef911169a9f696e5857b9e17
   RCTDeprecation: ebe712bb05077934b16c6bf25228bdec34b64f83
   RCTRequired: ca91e5dd26b64f577b528044c962baf171c6b716

@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import React from 'react';
 import { View, Text, Image, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
 
-import { BikeType } from './types';
+import { BikeType } from '../types';
 // import LocalPoseEstimationModule from '../modules/local-pose-estimation';
 
 // Bike data

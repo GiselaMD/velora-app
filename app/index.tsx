@@ -9,6 +9,7 @@ import {
   Dimensions,
 } from "react-native";
 import { useState, useRef } from "react";
+import MediapipePoseEstimationModule from "@/modules/mediapipe-pose-estimation/src/MediapipePoseEstimationModule";
 
 
 const quotes = [
@@ -64,8 +65,8 @@ export default function EntryScreen() {
             <Text className="text-center text-2xl text-white opacity-90">
               anytime, anywhere
             </Text>
-            {/* <Text>{MyModule.hello()}</Text> */}
           </View>
+          <Text>{MediapipePoseEstimationModule.hello()}</Text> 
 
           {/* Swipeable Quotes */}
           <View className="my-6 h-20">

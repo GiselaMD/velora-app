@@ -10,7 +10,7 @@ import {
   SafeAreaView,
 } from "react-native";
 
-import { BikeType } from "./types";
+import { BikeType } from "../types";
 
 // Bike assessment images mapping
 export const bikeAssessmentImages = {
