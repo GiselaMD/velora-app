@@ -3,9 +3,15 @@ import { NativeModule, requireNativeModule } from 'expo';
 import { MediapipePoseEstimationModuleEvents } from './MediapipePoseEstimation.types';
 
 declare class MediapipePoseEstimationModule extends NativeModule<MediapipePoseEstimationModuleEvents> {
-  PI: number;
-  hello(): string;
-  setValueAsync(value: string): Promise<void>;
+  initLandmarker(): Promise<void>;
+  detectPose(imageBase64: string): Promise<
+    {
+      x: number;
+      y: number;
+      z: number;
+      visibility: number;
+    }[][]
+  >;
 }
 
 // This call loads the native module object from the JSI.

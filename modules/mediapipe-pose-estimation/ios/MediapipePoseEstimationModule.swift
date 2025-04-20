@@ -1,49 +1,57 @@
 import ExpoModulesCore
 import MediaPipeTasksVision
+import UIKit
 
 public class MediapipePoseEstimationModule: Module {
-  // Each module class must implement the definition function. The definition consists of components
-  // that describes the module's functionality and behavior.
-  // See https://docs.expo.dev/modules/module-api for more details about available components.
+  var landmarker: PoseLandmarker?
+
   public func definition() -> ModuleDefinition {
-    // Sets the name of the module that JavaScript code will use to refer to the module. Takes a string as an argument.
-    // Can be inferred from module's class name, but it's recommended to set it explicitly for clarity.
-    // The module will be accessible from `requireNativeModule('MediapipePoseEstimation')` in JavaScript.
     Name("MediapipePoseEstimation")
 
-    // Sets constant properties on the module. Can take a dictionary or a closure that returns a dictionary.
-    Constants([
-      "PI": Double.pi
-    ])
-
-    // Defines event names that the module can send to JavaScript.
-    Events("onChange")
-
-    // Defines a JavaScript synchronous function that runs the native code on the JavaScript thread.
-    Function("hello") {
-      return "Hello from IOS! 👋"
+    Function("initLandmarker") {
+      try? self.loadLandmarker()
     }
 
-    // Defines a JavaScript function that always returns a Promise and whose native code
-    // is by default dispatched on the different thread than the JavaScript runtime runs on.
-    AsyncFunction("setValueAsync") { (value: String) in
-      // Send an event to JavaScript.
-      self.sendEvent("onChange", [
-        "value": value
-      ])
-    }
-
-    // Enables the module to be used as a native view. Definition components that are accepted as part of the
-    // view definition: Prop, Events.
-    View(MediapipePoseEstimationView.self) {
-      // Defines a setter for the `url` prop.
-      Prop("url") { (view: MediapipePoseEstimationView, url: URL) in
-        if view.webView.url != url {
-          view.webView.load(URLRequest(url: url))
-        }
+      Function("detectPose") { (imageBase64: String) -> [[[String: Any]]] in
+      guard let landmarker = self.landmarker else {
+          throw Exception(file: "PoseLandmarker: Landmarker not initialized")
       }
 
-      Events("onLoad")
+      guard let imageData = Data(base64Encoded: imageBase64),
+            let uiImage = UIImage(data: imageData),
+            let mpImage = try? MPImage(uiImage: uiImage) else {
+          throw Exception(file: "PoseLandmarker: Invalid image data")
+      }
+
+      let result = try landmarker.detect(image: mpImage)
+
+      return result.landmarks.map { pose in
+        pose.map { landmark in
+          [
+            "x": landmark.x,
+            "y": landmark.y,
+            "z": landmark.z,
+            "visibility": landmark.visibility
+          ]
+        }
+      }
     }
+  }
+
+  // ✅ Moved this outside the definition() function
+  private func loadLandmarker() throws {
+    guard let modelPath = Bundle.main.path(forResource: "pose_landmarker_full", ofType: "task") else {
+        throw Exception(file: "PoseLandmarker: Failed to find model in bundle")
+    }
+
+    let options = PoseLandmarkerOptions()
+      options.baseOptions.modelAssetPath = modelPath
+      options.runningMode = .image
+//      options.minPoseDetectionConfidence = minPoseDetectionConfidence
+//      options.minPosePresenceConfidence = minPosePresenceConfidence
+//      options.minTrackingConfidence = minTrackingConfidence
+//      options.numPoses = numPoses
+
+    self.landmarker = try PoseLandmarker(options: options)
   }
 }
