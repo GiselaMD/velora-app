@@ -1,50 +1,141 @@
-# Welcome to your Expo app 👋
+# 🚴‍♀️ Velora
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+> Real-time bike fit analysis powered by AI 🧠 + Native performance ⚡️
 
-## Get started
+Velora is a modern React Native app built with [Expo](https://expo.dev), featuring native integration with [MediaPipe](https://developers.google.com/mediapipe) for high-performance human pose estimation (HPE). Designed for athletes and bike enthusiasts, Velora delivers instant feedback on your bike fit to help you optimize comfort, power, and performance.
 
-1. Install dependencies
+---
 
-   ```bash
-   npm install
-   ```
+## ✨ Features
 
-2. Start the app
+- 📹 **Real-Time Pose Detection** using native MediaPipe integration
+- 💡 **AI-Powered Fit Analysis** with clean results screen and smart UI
+- 🚴 **Side-view Pose Capture** flow optimized for indoor fitting
+- ⚙️ **Custom Native Modules** for blazing-fast performance
+- 🧪 **Typed with TypeScript** & styled with Tailwind
+- 🧼 **Clean Apple-style UI** with animations and interaction feedback
+- 🌐 Built on **Expo Router v2** for scalable navigation
 
-   ```bash
-    npx expo start
-   ```
+---
 
-In the output, you'll find options to open the app in a
+## 🧠 Stack
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+| Layer         | Tech                                |
+|--------------|--------------------------------------|
+| UI/UX        | Expo Router, React Native, Tailwind  |
+| Native       | MediaPipe (iOS SDK), Swift + JSI     |
+| Animation    | React Native Reanimated, Framer Motion |
+| Dev Tools    | TypeScript, ESLint, Prettier         |
+| Build        | EAS (Expo Application Services)      |
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+---
 
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+## 📁 Folder Structure
+```
+velora-app/
+├── app/
+├── components/
+├── assets/
+├── constants/
+├── hooks/
+├── modules/
+├── scripts/
+├── styles/
+├── types/
+├── ios/
+├── android/
+├── config files
+│   ├── app.json
+│   ├── package.json
+│   ├── tsconfig.json
+│   ├── babel.config.js
+│   ├── metro.config.js
+│   ├── tailwind.config.js
+│   └── prettier.config.js
+└── type definitions
+    ├── expo-env.d.ts
+    └── nativewind-env.d.ts
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Here's what each main directory typically contains:
+   app/: Contains the main application screens and routing logic using the new Expo Router
 
-## Learn more
+   components/: Reusable UI components
 
-To learn more about developing your project with Expo, look at the following resources:
+   assets/: Static files like images, fonts, etc.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+   constants/: Application-wide constants and configurations
 
-## Join the community
+   hooks/: Custom React hooks
 
-Join our community of developers creating universal apps.
+   modules/: Larger feature modules or external integrations
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+   scripts/: Utility scripts for development
+
+   styles/: Style-related files
+
+   types/: TypeScript type definitions
+
+   ios/ & android/: Native platform-specific code
+
+---
+
+## 🔌 Native Pose Estimation Module
+
+- Located at: `modules/mediapipe-pose-estimation`
+- Written in Swift using [MediaPipeTasksVision](https://developers.google.com/mediapipe/solutions/vision/pose_landmarker)
+- Exposed to JS using [`expo-modules`](https://docs.expo.dev/modules/overview/)
+
+Example Swift API:
+
+```swift
+Function("detectPose") { (imageBase64: String) -> [[[String: Any]]] in
+  ...
+}
+```
+
+Example usage:
+
+```js
+import PoseLandmarker from 'expo-modules-core';
+
+const result = await PoseLandmarker.detectPose(imageBase64);
+```
+
+---
+
+## 🛠️ Getting Started
+
+```sh
+Copy
+Edit
+git clone https://github.com/yourname/velora-app
+cd velora-app
+npx expo install
+npx expo run:ios
+``` 
+⚠️ Make sure pose_landmarker_full.task is bundled inside ios/ and correctly referenced in the Swift module.
+
+---
+
+### 📸 Pose Capture Tips
+ - Ensure the bike is level and fully visible on screen
+
+ - Use a side view angle for best results
+
+ - Camera should remain steady for accurate detection
+
+ ---
+
+ ### 🧪 Testing
+ ```sh
+ # Run unit tests (Jest)
+npm test
+
+# Lint your code
+npm run lint
+```
+
+### 👩‍💻 Author
+Made with ❤️ by @GiselaMD
+
