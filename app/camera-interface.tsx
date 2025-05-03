@@ -1,8 +1,21 @@
 import React, { useEffect, useRef } from "react";
 import { View, Text, SafeAreaView, TouchableOpacity } from "react-native";
-import { Camera, useCameraDevice, useCameraPermission, useFrameProcessor } from 'react-native-vision-camera';
-import MediapipePoseEstimationModule from "@/modules/mediapipe-pose-estimation/src/MediapipePoseEstimationModule"; // Import your native pose estimation module
+import { Camera, useCameraDevice, useCameraPermission, useFrameProcessor, VisionCameraProxy } from 'react-native-vision-camera';
+// import MediapipePoseEstimationModule from "@/modules/mediapipe-pose-estimation/src/MediapipePoseEstimationModule"; // Import your native pose estimation module
 
+// This loads the native plugin you defined in Swift with `@objc(PoseEstimationFrameProcessorPlugin)`
+const plugin = VisionCameraProxy.initFrameProcessorPlugin('poseEstimation', {});
+
+export function poseEstimation(frame: Frame) {
+  'worklet'
+  if (plugin == null) {
+    console.log('❌ Plugin not initialized')
+    return
+  }
+  const result = plugin.call(frame)
+  console.log('✅ Pose result:', result)
+  return result
+}
 
 export default function CameraInterface() {
   
@@ -25,21 +38,24 @@ export default function CameraInterface() {
   // Frame processor to process each camera frame
   const frameProcessor = useFrameProcessor((frame) => {
     'worklet';
+    
+   poseEstimation(frame); // ✅ This is your plugin's registered name
 
-    const currentTime = Date.now();
-    if (currentTime - lastProcessedTime.current < 200) {
-      return; // Skip processing if last frame was too recent
-    }
+    
+    // const currentTime = Date.now();
+    // if (currentTime - lastProcessedTime.current < 200) {
+    //   return; // Skip processing if last frame was too recent
+    // }
 
-    // Log the frame
-    MediapipePoseEstimationModule.detectPose(frame)
-      .then((landmarks) => {
-        console.log("Pose Landmarks:", landmarks);
-        lastProcessedTime.current = currentTime; // Update the last processed time
-      })
-      .catch((error) => {
-        console.error("Pose estimation failed:", error);
-      });
+    // // Log the frame
+    // MediapipePoseEstimationModule.detectPose(frame)
+    //   .then((landmarks) => {
+    //     console.log("Pose Landmarks:", landmarks);
+    //     lastProcessedTime.current = currentTime; // Update the last processed time
+    //   })
+    //   .catch((error) => {
+    //     console.error("Pose estimation failed:", error);
+    //   });
   }, []);
 
 
