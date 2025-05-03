@@ -1,18 +1,17 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import { View, Text, SafeAreaView, Dimensions, TouchableOpacity } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { View, Text, SafeAreaView, TouchableOpacity } from "react-native";
 import { Camera, useCameraDevice, useCameraPermission, useFrameProcessor } from 'react-native-vision-camera';
 import MediapipePoseEstimationModule from "@/modules/mediapipe-pose-estimation/src/MediapipePoseEstimationModule"; // Import your native pose estimation module
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 export default function CameraInterface() {
-  const [isCameraReady, setIsCameraReady] = useState(false);
+  
   
   // Request camera permission
   const { hasPermission: permission, requestPermission } = useCameraPermission();
 
   // Get camera device
-  const device = useCameraDevice('back');
+  const device = useCameraDevice('front');
 
   useEffect(() => {
     const requestCamPermission = async () => {
@@ -21,7 +20,6 @@ export default function CameraInterface() {
     requestCamPermission();
   }, [requestPermission]);
 
-  const cameraRef = useRef(null);
   const lastProcessedTime = useRef(0);
 
   // Frame processor to process each camera frame
@@ -34,7 +32,7 @@ export default function CameraInterface() {
     }
 
     // Log the frame
-    MediapipePoseEstimationModule.detectPose(frame.base64)
+    MediapipePoseEstimationModule.detectPose(frame)
       .then((landmarks) => {
         console.log("Pose Landmarks:", landmarks);
         lastProcessedTime.current = currentTime; // Update the last processed time
@@ -44,9 +42,7 @@ export default function CameraInterface() {
       });
   }, []);
 
-  const handleCameraReady = useCallback(() => {
-    setIsCameraReady(true);
-  }, []);
+
 
 
   if (!permission) {
@@ -71,12 +67,12 @@ export default function CameraInterface() {
 
   return (
     <SafeAreaView className="flex-1">
-      {device && isCameraReady && (
+      {device && (
         <Camera
           style={{ flex: 1 }}
           device={device}
           isActive={true}
-          // frameProcessor={frameProcessor}
+          frameProcessor={frameProcessor}
           // onInitialized={handleCameraReady} // Camera ready callback
         />
       )}
