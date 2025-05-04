@@ -8,8 +8,8 @@ import {
   FlatList,
   Dimensions,
 } from "react-native";
-import { useState, useRef, useEffect } from "react";
-import MediapipePoseEstimationModule from "@/modules/mediapipe-pose-estimation/src/MediapipePoseEstimationModule";
+import { useState, useRef} from "react";
+// import MediapipePoseEstimationModule from "@/modules/mediapipe-pose-estimation/src/MediapipePoseEstimationModule";
 
 const quotes = [
   {
@@ -32,35 +32,35 @@ export default function EntryScreen() {
   const [activeIndex, setActiveIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
-  useEffect(() => {
-    const runPoseDetection = async () => {
-      try {
-        console.log("Initializing PoseLandmarker...");
-        await MediapipePoseEstimationModule.initLandmarker();
+  // useEffect(() => {
+  //   const runPoseDetection = async () => {
+  //     try {
+  //       console.log("Initializing PoseLandmarker...");
+  //       await MediapipePoseEstimationModule.initLandmarker();
 
-        // Load image from local asset
-        // const image = require("./assets/pose-test.jpg");
+  //       // Load image from local asset
+  //       // const image = require("./assets/pose-test.jpg");
 
-        // // Resize and get base64 string
-        // const manipulated = await ImageManipulator.manipulateAsync(
-        //   image,
-        //   [{ resize: { width: 480 } }],
-        //   { base64: true }
-        // );
+  //       // // Resize and get base64 string
+  //       // const manipulated = await ImageManipulator.manipulateAsync(
+  //       //   image,
+  //       //   [{ resize: { width: 480 } }],
+  //       //   { base64: true }
+  //       // );
 
-        // if (!manipulated.base64) throw new Error("Failed to get base64");
+  //       // if (!manipulated.base64) throw new Error("Failed to get base64");
 
-        // console.log("Running pose detection...");
-        // const landmarks = await MediapipePoseEstimationModule.detectPose(manipulated.base64);
+  //       // console.log("Running pose detection...");
+  //       // const landmarks = await MediapipePoseEstimationModule.detectPose(manipulated.base64);
 
-        // console.log("Pose landmarks:", JSON.stringify(landmarks, null, 2));
-      } catch (err) {
-        console.error("Pose detection error:", err);
-      }
-    };
+  //       // console.log("Pose landmarks:", JSON.stringify(landmarks, null, 2));
+  //     } catch (err) {
+  //       console.error("Pose detection error:", err);
+  //     }
+  //   };
 
-    runPoseDetection();
-  }, []);
+  //   runPoseDetection();
+  // }, []);
   
 
   const renderQuote = ({ item }: { item: { id: string; quote: string } }) => (

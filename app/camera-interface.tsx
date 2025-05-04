@@ -6,16 +6,21 @@ import { Camera, useCameraDevice, useCameraPermission, useFrameProcessor, Vision
 // This loads the native plugin you defined in Swift with `@objc(PoseEstimationFrameProcessorPlugin)`
 const plugin = VisionCameraProxy.initFrameProcessorPlugin('poseEstimation', {});
 
+
+let last = Date.now();
 export function poseEstimation(frame: Frame) {
-  'worklet'
+  'worklet';
+
   if (plugin == null) {
     console.log('❌ Plugin not initialized')
     return
   }
-  const result = plugin.call(frame)
-  console.log('✅ Pose result:', result)
-  return result
+
+  if (Date.now() - last < 200) return;
+  last = Date.now();
+  return plugin.call(frame);
 }
+
 
 export default function CameraInterface() {
   
