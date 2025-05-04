@@ -2,11 +2,10 @@ import Foundation
 import VisionCamera
 import AVFoundation
 import MediaPipeTasksVision
-import UIKit
 
 @objc(PoseEstimationFrameProcessorPlugin)
 public class PoseEstimationFrameProcessorPlugin: FrameProcessorPlugin {
-  private let detectorHandle = 1
+  private let detectorHandle = 1  // Fixed handle for now
   private var helper: PoseDetectorHelper?
 
   public override init(proxy: VisionCameraProxyHolder, options: [AnyHashable: Any]! = [:]) {
@@ -47,6 +46,21 @@ public class PoseEstimationFrameProcessorPlugin: FrameProcessorPlugin {
       timestamp: timestamp
     )
 
-    return true
+    if let result = helper.lastResult {
+      let serialized = result.landmarks.map { pose in
+        pose.map { landmark in
+          return [
+            "x": landmark.x,
+            "y": landmark.y,
+            "z": landmark.z,
+            "visibility": landmark.visibility
+          ]
+        }
+      }
+      print("✅ Pose Estimation result:", serialized)
+      return serialized
+    }
+
+    return nil
   }
 }
