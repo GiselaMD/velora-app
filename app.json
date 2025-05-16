@@ -10,7 +10,8 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.velora-app"
+      "bundleIdentifier": "com.anonymous.velora-app",
+      "requireFullScreen": true
     },
     "android": {
       "adaptiveIcon": {
@@ -40,7 +41,8 @@
         {
           "cameraPermissionText": "$(PRODUCT_NAME) needs access to your Camera."
         }
-      ]
+      ],
+      "./plugins/withVeloraPoseEstimation"
     ],
     "experiments": {
       "typedRoutes": true

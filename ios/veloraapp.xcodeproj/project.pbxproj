@@ -11,9 +11,9 @@
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
-		B13B38A135004A4F803E5432 /* PoseDetectorHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0E277E7A7C4D5C81236B21 /* PoseDetectorHelper.swift */; };
-		3492757A1C234A9480174DB6 /* PoseEstimationPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC6D7F56DF2D4BF285C81FBF /* PoseEstimationPlugin.swift */; };
-		C47A200A9B2C4743893B5054 /* VeloraPoseEstimation.m in Sources */ = {isa = PBXBuildFile; fileRef = C4D64FFC6DFF439BABE99205 /* VeloraPoseEstimation.m */; };
+		78A6B8CFABD3404C8C26B23C /* PoseDetectorHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65F8A7239B8143DC832452A2 /* PoseDetectorHelper.swift */; };
+		3F7BCC57BE55456CBA057EFE /* PoseEstimationPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3081696F28C45DD81D143EF /* PoseEstimationPlugin.swift */; };
+		8359AC824B964088A5061140 /* VeloraPoseEstimation.m in Sources */ = {isa = PBXBuildFile; fileRef = 287DD51F7B1D44A5B61059B9 /* VeloraPoseEstimation.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -25,10 +25,10 @@
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = veloraapp/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* veloraapp-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "veloraapp-Bridging-Header.h"; path = "veloraapp/veloraapp-Bridging-Header.h"; sourceTree = "<group>"; };
-		DC0E277E7A7C4D5C81236B21 /* PoseDetectorHelper.swift */ = {isa = PBXFileReference; name = "PoseDetectorHelper.swift"; path = "VeloraPoseEstimation/PoseDetectorHelper.swift"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.swift; explicitFileType = undefined; includeInIndex = 0; };
-		AC6D7F56DF2D4BF285C81FBF /* PoseEstimationPlugin.swift */ = {isa = PBXFileReference; name = "PoseEstimationPlugin.swift"; path = "VeloraPoseEstimation/PoseEstimationPlugin.swift"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.swift; explicitFileType = undefined; includeInIndex = 0; };
-		C4D64FFC6DFF439BABE99205 /* VeloraPoseEstimation.m */ = {isa = PBXFileReference; name = "VeloraPoseEstimation.m"; path = "VeloraPoseEstimation/VeloraPoseEstimation.m"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; explicitFileType = undefined; includeInIndex = 0; };
-		A27E14D6ECE3420A97AA0B49 /* pose_landmarker_full.task */ = {isa = PBXFileReference; name = "pose_landmarker_full.task"; path = "VeloraPoseEstimation/pose_landmarker_full.task"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		65F8A7239B8143DC832452A2 /* PoseDetectorHelper.swift */ = {isa = PBXFileReference; name = "PoseDetectorHelper.swift"; path = "VeloraPoseEstimation/PoseDetectorHelper.swift"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.swift; explicitFileType = undefined; includeInIndex = 0; };
+		D3081696F28C45DD81D143EF /* PoseEstimationPlugin.swift */ = {isa = PBXFileReference; name = "PoseEstimationPlugin.swift"; path = "VeloraPoseEstimation/PoseEstimationPlugin.swift"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.swift; explicitFileType = undefined; includeInIndex = 0; };
+		287DD51F7B1D44A5B61059B9 /* VeloraPoseEstimation.m */ = {isa = PBXFileReference; name = "VeloraPoseEstimation.m"; path = "VeloraPoseEstimation/VeloraPoseEstimation.m"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; explicitFileType = undefined; includeInIndex = 0; };
+		6578A09E40F04A879C33D0A6 /* pose_landmarker_full.task */ = {isa = PBXFileReference; name = "pose_landmarker_full.task"; path = "VeloraPoseEstimation/pose_landmarker_full.task"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -77,7 +77,8 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				C6B01710905D4425B5A27EAE /* VeloraPoseEstimation */,
+				3D1F16D0562E4D63BE516268 /* VeloraPoseEstimation */,
+				8715002F54ED40038DAC7CC3 /* VeloraPoseEstimation */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -101,13 +102,20 @@
 			path = veloraapp/Supporting;
 			sourceTree = "<group>";
 		};
-		C6B01710905D4425B5A27EAE /* VeloraPoseEstimation */ = {
+		3D1F16D0562E4D63BE516268 /* VeloraPoseEstimation */ = {
 			isa = "PBXGroup";
 			children = (
-				DC0E277E7A7C4D5C81236B21 /* PoseDetectorHelper.swift */,
-				AC6D7F56DF2D4BF285C81FBF /* PoseEstimationPlugin.swift */,
-				C4D64FFC6DFF439BABE99205 /* VeloraPoseEstimation.m */,
-				A27E14D6ECE3420A97AA0B49 /* pose_landmarker_full.task */,
+				65F8A7239B8143DC832452A2 /* PoseDetectorHelper.swift */,
+				D3081696F28C45DD81D143EF /* PoseEstimationPlugin.swift */,
+				287DD51F7B1D44A5B61059B9 /* VeloraPoseEstimation.m */,
+				6578A09E40F04A879C33D0A6 /* pose_landmarker_full.task */,
+			);
+			name = VeloraPoseEstimation;
+			sourceTree = "<group>";
+		};
+		8715002F54ED40038DAC7CC3 /* VeloraPoseEstimation */ = {
+			isa = "PBXGroup";
+			children = (
 			);
 			name = VeloraPoseEstimation;
 			sourceTree = "<group>";
@@ -247,9 +255,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				B13B38A135004A4F803E5432 /* PoseDetectorHelper.swift in Sources */,
-				3492757A1C234A9480174DB6 /* PoseEstimationPlugin.swift in Sources */,
-				C47A200A9B2C4743893B5054 /* VeloraPoseEstimation.m in Sources */,
+				78A6B8CFABD3404C8C26B23C /* PoseDetectorHelper.swift in Sources */,
+				3F7BCC57BE55456CBA057EFE /* PoseEstimationPlugin.swift in Sources */,
+				8359AC824B964088A5061140 /* VeloraPoseEstimation.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

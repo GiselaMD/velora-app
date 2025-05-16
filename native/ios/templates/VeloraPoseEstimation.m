@@ -1,13 +1,10 @@
 // native/ios/templates/VeloraPoseEstimation.m
-#import <React/RCTBridgeModule.h>
+#import <VisionCamera/FrameProcessorPlugin.h>
 
-@interface RCT_EXTERN_MODULE(VeloraPoseEstimation, NSObject)
+#if __has_include("veloraapp/veloraapp-Swift.h")
+#import "veloraapp/veloraapp-Swift.h"
+#else
+#import "veloraapp-Swift.h"
+#endif
 
-RCT_EXTERN_METHOD(initialize:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject)
-
-RCT_EXTERN_METHOD(detectPose:(CMSampleBuffer)sampleBuffer
-                  resolve:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject)
-
-@end
+VISION_EXPORT_SWIFT_FRAME_PROCESSOR(PoseEstimationPlugin, poseEstimation)

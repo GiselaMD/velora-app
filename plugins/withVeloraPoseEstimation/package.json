@@ -1,0 +1,11 @@
+{
+    "name": "@velora/with-pose-estimation",
+    "version": "1.0.0",
+    "description": "Expo config plugin for Velora Pose Estimation",
+    "main": "index.js",
+    "author": "Velora",
+    "license": "MIT",
+    "dependencies": {
+        "@expo/config-plugins": "^7.0.0"
+    }
+}

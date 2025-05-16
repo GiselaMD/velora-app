@@ -3,51 +3,77 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-const MEDIAPIPE_MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task';
+const MEDIAPIPE_MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task';
 
 function copyFile(src, dest) {
-  if (!fs.existsSync(src)) {
-    console.error(`Template file not found: ${src}`);
-    return;
+  try {
+    if (!fs.existsSync(src)) {
+      throw new Error(`Template file not found: ${src}`);
+    }
+    fs.copyFileSync(src, dest);
+    console.log(`✓ Copied ${path.basename(src)}`);
+  } catch (error) {
+    console.error(`✗ Error copying ${path.basename(src)}:`, error.message);
+    throw error;
   }
-  fs.copyFileSync(src, dest);
-  console.log(`Copied ${path.basename(src)}`);
 }
 
 async function setupNative() {
   try {
-    // Create directories
-    const nativeDir = path.join(__dirname, '../native');
-    const iosDir = path.join(nativeDir, 'ios/VeloraPoseEstimation');
-    const templateDir = path.join(nativeDir, 'ios/templates');
-    
+    const projectRoot = path.join(__dirname, '..');
+    const templateDir = path.join(projectRoot, 'native/ios/templates');
+    const targetDir = path.join(projectRoot, 'ios/VeloraPoseEstimation');
+
+    // Verify ios directory exists (should be created by prebuild)
+    const iosDir = path.join(projectRoot, 'ios');
     if (!fs.existsSync(iosDir)) {
-      fs.mkdirSync(iosDir, { recursive: true });
-      console.log('Created iOS directory structure');
+      throw new Error('iOS directory not found. Run `npx expo prebuild` first.');
     }
+    
+    // Create target directory
+    if (!fs.existsSync(targetDir)) {
+      fs.mkdirSync(targetDir, { recursive: true });
+      console.log('✓ Created VeloraPoseEstimation directory');
+    }
+
+    // Verify templates exist
+    console.log('Verifying templates...');
+    const templateFiles = [
+      'PoseDetectorHelper.swift',
+      'PoseEstimationPlugin.swift',
+      'VeloraPoseEstimation.m'
+    ];
+
+    const missingFiles = templateFiles.filter(file => 
+      !fs.existsSync(path.join(templateDir, file))
+    );
+
+    if (missingFiles.length > 0) {
+      throw new Error(
+        'Missing template files:\n' +
+        missingFiles.map(file => `  - ${file}`).join('\n')
+      );
+    }
+    console.log('✓ All templates found\n');
 
     // Download MediaPipe model
     console.log('Downloading MediaPipe model...');
-    const modelPath = path.join(iosDir, 'pose_landmarker_lite.task');
+    const modelPath = path.join(targetDir, 'pose_landmarker_full.task');
     execSync(`curl -o "${modelPath}" "${MEDIAPIPE_MODEL_URL}"`);
-    console.log('Downloaded MediaPipe model');
+    console.log('✓ Downloaded MediaPipe model\n');
 
-    // Copy Swift files from templates
-    const files = [
-      'VeloraPoseEstimation.swift',
-      'VeloraPoseEstimation.m',
-      'PoseEstimationPlugin.swift'
-    ];
-
-    files.forEach(file => {
+    // Copy template files
+    console.log('Copying native files...');
+    templateFiles.forEach(file => {
       const srcPath = path.join(templateDir, file);
-      const destPath = path.join(iosDir, file);
+      const destPath = path.join(targetDir, file);
       copyFile(srcPath, destPath);
     });
+    console.log('\n✓ All files copied successfully\n');
 
     console.log('Native setup complete! ✅');
   } catch (error) {
-    console.error('Error during setup:', error);
+    console.error('\n❌ Setup failed:', error.message);
     process.exit(1);
   }
 }
