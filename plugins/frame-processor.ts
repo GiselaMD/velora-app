@@ -4,7 +4,7 @@ console.log('Initializing poseEstimation plugin...');
 const plugin = VisionCameraProxy.initFrameProcessorPlugin('poseEstimation', {});
 
 if (!plugin) {
-  console.error('Failed to initialize poseEstimation plugin!');
+  console.error('Failed to initialize poseEstimation plugin');
 } else {
   console.log('Successfully initialized poseEstimation plugin');
 }
