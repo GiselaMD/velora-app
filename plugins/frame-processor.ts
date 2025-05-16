@@ -1,17 +1,30 @@
-// plugins/frame-processor.ts
-import type { Frame } from 'react-native-vision-camera';
+import { VisionCameraProxy, type Frame } from 'react-native-vision-camera';
+
+console.log('Initializing poseEstimation plugin...');
+const plugin = VisionCameraProxy.initFrameProcessorPlugin('poseEstimation', {});
+
+if (!plugin) {
+  console.error('Failed to initialize poseEstimation plugin!');
+} else {
+  console.log('Successfully initialized poseEstimation plugin');
+}
 
 /**
  * Processes a frame through the pose estimation plugin.
- * Makes sure to use the correct function name that matches the one exported in VeloraPoseEstimation.m
  */
 export function poseEstimation(frame: Frame) {
   'worklet';
   
+  if (!plugin) {
+    console.log('[worklet] Plugin not initialized');
+    return [];
+  }
+  
   try {
-    // @ts-ignore - this function is injected by VisionCamera at runtime
-    // The function name should be __poseEstimation to match what's registered in the Obj-C file
-    return global.__poseEstimation(frame);
+    // Call the native plugin
+    const result = plugin.call(frame, {});
+    console.log('[worklet] Plugin call result type:', result ? typeof result : 'null');
+    return result || [];
   } catch (e) {
     console.log('[worklet] Pose estimation error:', String(e));
     return [];

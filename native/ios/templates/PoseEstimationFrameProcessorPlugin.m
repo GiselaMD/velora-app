@@ -7,4 +7,4 @@
 #import "veloraapp-Swift.h"
 #endif
 
-VISION_EXPORT_SWIFT_FRAME_PROCESSOR(PoseEstimationPlugin, poseEstimation)
+VISION_EXPORT_SWIFT_FRAME_PROCESSOR(PoseEstimationFrameProcessorPlugin, poseEstimation)

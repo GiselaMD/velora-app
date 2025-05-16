@@ -1,12 +1,41 @@
 // app/camera-interface.tsx
 import React, { useEffect, useState } from "react";
 import { View, Text, SafeAreaView, TouchableOpacity, Dimensions } from "react-native";
-import { Camera, useCameraDevice, useCameraPermission, useFrameProcessor } from 'react-native-vision-camera';
-import { runOnJS } from 'react-native-reanimated';
+import { Camera, useCameraDevice, useCameraPermission, useFrameProcessor, VisionCameraProxy, type Frame} from 'react-native-vision-camera';
+import { useRunOnJS } from 'react-native-worklets-core';
 import { router } from "expo-router";
 import Svg, { Circle, Line } from 'react-native-svg';
-import { poseEstimation } from '@/plugins/frame-processor';
 
+console.log('Initializing poseEstimation plugin...');
+const plugin = VisionCameraProxy.initFrameProcessorPlugin('poseEstimation', {});
+
+if (!plugin) {
+  console.error('Failed to initialize poseEstimation plugin');
+} else {
+  console.log('Successfully initialized poseEstimation plugin');
+}
+
+/**
+ * Processes a frame through the pose estimation plugin.
+ */
+function poseEstimation(frame: Frame) {
+  'worklet';
+  
+  if (!plugin || typeof plugin.call !== 'function') {
+    console.warn('❌ Plugin not initialized');
+    return [];
+  }
+  
+  try {
+    // Call the native plugin
+    const result = plugin.call(frame, {});
+    console.log('[worklet] Plugin call result type:', result ? typeof result : 'null');
+    return result || [];
+  } catch (e) {
+    console.log('[worklet] Pose estimation error:', String(e));
+    return [];
+  }
+}
 
 // Keypoint connections for basic pose skeleton
 const connections = [
@@ -37,27 +66,43 @@ export default function CameraInterface() {
   const device = useCameraDevice('front');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [landmarks, setLandmarks] = useState<PoseLandmark[]>([]);
+  const [debugInfo, setDebugInfo] = useState<string[]>([]);
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
   useEffect(() => {
     if (!hasPermission) requestPermission();
   }, [hasPermission]);
 
+  // Create JS functions to be called from worklets
   const handlePoseDetection = (detectedLandmarks: PoseLandmark[]) => {
     setLandmarks(detectedLandmarks);
   };
+  
+  const addDebugInfo = (info: string) => {
+    setDebugInfo(prev => [info, ...prev.slice(0, 9)]); // Keep last 10 messages
+  };
+
+  // Create worklet-compatible versions using useRunOnJS
+  const handlePoseDetectionJS = useRunOnJS(handlePoseDetection, []);
+  const addDebugInfoJS = useRunOnJS(addDebugInfo, []);
 
   const frameProcessor = useFrameProcessor((frame) => {
     'worklet'
     if (!isAnalyzing) return;
 
     try {
+      addDebugInfoJS(`Processing frame: ${frame.width}x${frame.height}`);
+      
       const pose = poseEstimation(frame);
+      
       if (pose?.length > 0) {
-        runOnJS(handlePoseDetection)(pose[0]);
+        addDebugInfoJS(`Detected pose with ${pose[0].length} landmarks`);
+        handlePoseDetectionJS(pose[0]);
+      } else {
+        addDebugInfoJS('No pose detected');
       }
     } catch (error) {
-      runOnJS(console.log)('Pose estimation error:', error);
+      addDebugInfoJS(`Error: ${String(error)}`);
     }
   }, [isAnalyzing]);
 
@@ -73,6 +118,7 @@ export default function CameraInterface() {
       }
     } else {
       setIsAnalyzing(true);
+      setDebugInfo(['Starting analysis...']);
     }
   };
 
@@ -202,6 +248,13 @@ export default function CameraInterface() {
         </Svg>
       )}
 
+      {/* Debug Info */}
+      <View className="absolute top-12 left-4 right-4 bg-black/70 rounded-lg p-4 max-h-40">
+        {debugInfo.map((info, index) => (
+          <Text key={index} className="text-white text-xs mb-1">{info}</Text>
+        ))}
+      </View>
+
       <TouchableOpacity
         onPress={handleStartAnalysis}
         className="absolute bottom-10 left-0 right-0 items-center"
@@ -212,7 +265,7 @@ export default function CameraInterface() {
       </TouchableOpacity>
 
       {isAnalyzing && (
-        <View className="absolute top-10 left-4 right-4 bg-black/50 rounded-lg p-4">
+        <View className="absolute top-2 left-4 right-4 bg-black/50 rounded-lg p-4">
           <Text className="text-white text-center">
             Position yourself in the frame and hold your cycling position
           </Text>

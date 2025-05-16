@@ -1,4 +1,3 @@
-// native/ios/templates/PoseDetectorHelper.swift
 import AVFoundation
 import MediaPipeTasksVision
 import UIKit
