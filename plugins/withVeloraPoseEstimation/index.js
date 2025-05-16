@@ -1,6 +1,8 @@
 // plugins/withVeloraPoseEstimation/index.js
-const { withPlugins } = require('@expo/config-plugins');
+const { withPlugins, createRunOncePlugin } = require('@expo/config-plugins');
 const withXcodeModifications = require('./withXcodeModifications');
+const withMediaPipePodfileMod = require('./withMediaPipePodfileMod');
+const withModelPostInstall = require('./withModelPostInstall');
 
 const withVeloraPoseEstimation = (config) => {
   // Ensure we have the necessary iOS configuration
@@ -9,8 +11,20 @@ const withVeloraPoseEstimation = (config) => {
   }
 
   return withPlugins(config, [
-    withXcodeModifications
+    // Apply Xcode project modifications
+    withXcodeModifications,
+    
+    // Add MediaPipe dependency to Podfile
+    withMediaPipePodfileMod,
+    
+    // Set up post-install hook for model installation
+    withModelPostInstall
   ]);
 };
 
-module.exports = withVeloraPoseEstimation;
+// Create a plugin that only runs once per prebuild
+module.exports = createRunOncePlugin(
+  withVeloraPoseEstimation,
+  'velora-pose-estimation',
+  '1.0.0'
+);

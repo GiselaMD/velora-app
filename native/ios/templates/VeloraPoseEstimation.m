@@ -1,5 +1,5 @@
-// native/ios/templates/VeloraPoseEstimation.m
 #import <VisionCamera/FrameProcessorPlugin.h>
+#import <VisionCamera/FrameProcessorPluginRegistry.h>
 
 #if __has_include("veloraapp/veloraapp-Swift.h")
 #import "veloraapp/veloraapp-Swift.h"

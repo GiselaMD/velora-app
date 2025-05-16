@@ -5,6 +5,15 @@ const { execSync } = require('child_process');
 
 const MEDIAPIPE_MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task';
 
+// Config
+const PROJECT_ROOT = path.join(__dirname, '..');
+const TEMPLATE_DIR = path.join(PROJECT_ROOT, 'native/ios/templates');
+const TARGET_DIR = path.join(PROJECT_ROOT, 'ios/VeloraPoseEstimation');
+const MODEL_NAME = 'pose_landmarker_full.task';
+
+/**
+ * Copies a file from source to destination
+ */
 function copyFile(src, dest) {
   try {
     if (!fs.existsSync(src)) {
@@ -12,70 +21,149 @@ function copyFile(src, dest) {
     }
     fs.copyFileSync(src, dest);
     console.log(`✓ Copied ${path.basename(src)}`);
+    return true;
   } catch (error) {
     console.error(`✗ Error copying ${path.basename(src)}:`, error.message);
-    throw error;
+    return false;
   }
 }
 
-async function setupNative() {
+/**
+ * Downloads a file from URL to destination
+ */
+function downloadFile(url, dest) {
   try {
-    const projectRoot = path.join(__dirname, '..');
-    const templateDir = path.join(projectRoot, 'native/ios/templates');
-    const targetDir = path.join(projectRoot, 'ios/VeloraPoseEstimation');
+    console.log(`Downloading ${path.basename(dest)}...`);
+    execSync(`curl -s -o "${dest}" "${url}"`);
+    console.log(`✓ Downloaded ${path.basename(dest)}`);
+    return true;
+  } catch (error) {
+    console.error(`✗ Error downloading ${path.basename(dest)}:`, error.message);
+    return false;
+  }
+}
 
-    // Verify ios directory exists (should be created by prebuild)
-    const iosDir = path.join(projectRoot, 'ios');
-    if (!fs.existsSync(iosDir)) {
-      throw new Error('iOS directory not found. Run `npx expo prebuild` first.');
+/**
+ * Ensures the model file is in the target directory
+ */
+function setupModelFile() {
+  const modelPath = path.join(TARGET_DIR, MODEL_NAME);
+  
+  // Check if model exists in target directory
+  if (!fs.existsSync(modelPath)) {
+    console.log(`MediaPipe model not found at ${modelPath}`);
+    return downloadFile(MEDIAPIPE_MODEL_URL, modelPath);
+  }
+  
+  console.log(`✓ MediaPipe model already exists at ${modelPath}`);
+  return true;
+}
+
+/**
+ * Verify iOS project structure and create necessary directories
+ */
+function verifyIosStructure() {
+  const iosDir = path.join(PROJECT_ROOT, 'ios');
+  
+  // Check if iOS directory exists (should be created by prebuild)
+  if (!fs.existsSync(iosDir)) {
+    console.error('❌ iOS directory not found. Run `npx expo prebuild` first.');
+    return false;
+  }
+  
+  // Create target directory if it doesn't exist
+  if (!fs.existsSync(TARGET_DIR)) {
+    try {
+      fs.mkdirSync(TARGET_DIR, { recursive: true });
+      console.log('✓ Created VeloraPoseEstimation directory');
+    } catch (error) {
+      console.error('❌ Failed to create VeloraPoseEstimation directory:', error.message);
+      return false;
+    }
+  }
+  
+  return true;
+}
+
+/**
+ * Verify template files exist
+ */
+function verifyTemplates() {
+  console.log('Verifying templates...');
+  
+  // Get all files from template directory
+  if (!fs.existsSync(TEMPLATE_DIR)) {
+    console.error(`❌ Template directory not found: ${TEMPLATE_DIR}`);
+    return false;
+  }
+  
+  const templateFiles = fs.readdirSync(TEMPLATE_DIR);
+  
+  if (templateFiles.length === 0) {
+    console.error('❌ No template files found in template directory');
+    return false;
+  }
+  
+  console.log(`✓ Found ${templateFiles.length} template files`);
+  return { success: true, files: templateFiles };
+}
+
+/**
+ * Copy template files to target directory
+ */
+function copyTemplateFiles() {
+  const templateVerification = verifyTemplates();
+  
+  if (!templateVerification.success) {
+    return false;
+  }
+  
+  console.log('\nCopying native files...');
+  let success = true;
+  
+  templateVerification.files.forEach(file => {
+    const srcPath = path.join(TEMPLATE_DIR, file);
+    const destPath = path.join(TARGET_DIR, file);
+    if (!copyFile(srcPath, destPath)) {
+      success = false;
+    }
+  });
+  
+  return success;
+}
+
+/**
+ * Main function to setup native modules
+ */
+async function setupNative() {
+  console.log('🚀 Setting up native modules for VeloraPoseEstimation...\n');
+  
+  try {
+    // Step 1: Verify iOS project structure
+    if (!verifyIosStructure()) {
+      throw new Error('Failed to verify iOS project structure');
     }
     
-    // Create target directory
-    if (!fs.existsSync(targetDir)) {
-      fs.mkdirSync(targetDir, { recursive: true });
-      console.log('✓ Created VeloraPoseEstimation directory');
+    // Step 2: Copy template files
+    if (!copyTemplateFiles()) {
+      throw new Error('Failed to copy template files');
     }
-
-    // Verify templates exist
-    console.log('Verifying templates...');
-    const templateFiles = [
-      'PoseDetectorHelper.swift',
-      'PoseEstimationPlugin.swift',
-      'VeloraPoseEstimation.m'
-    ];
-
-    const missingFiles = templateFiles.filter(file => 
-      !fs.existsSync(path.join(templateDir, file))
-    );
-
-    if (missingFiles.length > 0) {
-      throw new Error(
-        'Missing template files:\n' +
-        missingFiles.map(file => `  - ${file}`).join('\n')
-      );
+    
+    // Step 3: Setup MediaPipe model
+    if (!setupModelFile()) {
+      throw new Error('Failed to setup MediaPipe model');
     }
-    console.log('✓ All templates found\n');
-
-    // Download MediaPipe model
-    console.log('Downloading MediaPipe model...');
-    const modelPath = path.join(targetDir, 'pose_landmarker_full.task');
-    execSync(`curl -o "${modelPath}" "${MEDIAPIPE_MODEL_URL}"`);
-    console.log('✓ Downloaded MediaPipe model\n');
-
-    // Copy template files
-    console.log('Copying native files...');
-    templateFiles.forEach(file => {
-      const srcPath = path.join(templateDir, file);
-      const destPath = path.join(targetDir, file);
-      copyFile(srcPath, destPath);
-    });
-    console.log('\n✓ All files copied successfully\n');
-
-    console.log('Native setup complete! ✅');
+    
+    console.log('\n✅ Native setup completed successfully!');
+    console.log('🔍 Next steps:');
+    console.log('   1. Run your app with `npx expo run:ios`');
+    console.log('   2. If you have issues, check that the model file is correctly bundled');
+    
   } catch (error) {
     console.error('\n❌ Setup failed:', error.message);
     process.exit(1);
   }
 }
 
+// Run the setup
 setupNative();

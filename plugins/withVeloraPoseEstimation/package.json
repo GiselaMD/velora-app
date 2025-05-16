@@ -7,5 +7,8 @@
     "license": "MIT",
     "dependencies": {
         "@expo/config-plugins": "^7.0.0"
+    },
+    "peerDependencies": {
+        "expo": ">=53.0.0"
     }
 }
