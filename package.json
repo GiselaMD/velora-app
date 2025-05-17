@@ -5,13 +5,14 @@
   "scripts": {
     "start": "expo start --dev-client",
     "android": "expo run:android",
-    "ios": "expo run:ios --device",
+    "ios": "expo run:ios",
+    "ios:device": "expo run:ios --device",
+    "xcode": "xed ios",
     "setup-native": "node scripts/setup-native.js",
     "prebuild": "npx expo prebuild",
-    "postprebuild": "node ./scripts/setup-native.js",
     "clean": "rm -rf ios android",
-    "fullbuild": "npm run clean && npm run prebuild && npm run ios",
     "podinstall": "cd ios && pod install && cd ..",
+    "fullbuild": "npm run clean && npx expo prebuild && npm run podinstall && npm run ios:device",
     "web": "expo start --web",
     "test": "jest --watchAll",
     "lint": "expo lint"

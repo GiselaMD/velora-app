@@ -15,7 +15,7 @@ import {
 import { useState, useRef, useEffect } from "react";
 import { Camera, useCameraDevice, useCameraPermission, useFrameProcessor } from 'react-native-vision-camera';
 import { useRunOnJS } from 'react-native-worklets-core';
-import { simplestProcessor } from '../plugins/frameProcessor';
+import { processPoseEstimation } from '../plugins/frameProcessor';
 
 
 const quotes = [
@@ -68,25 +68,19 @@ export default function EntryScreen() {
   const updateFrameInfoJS = useRunOnJS(updateFrameInfo, []);
   
   // Frame processor
- const frameProcessor = useFrameProcessor((frame) => {
-    'worklet';
+const frameProcessor = useFrameProcessor((frame) => {
+  'worklet';
+  
+  try {
+    addLogJS(`Processing frame: ${frame.width}x${frame.height}`);
     
-    try {
-      addLogJS(`Processing frame: ${frame.width}x${frame.height}`);
-      
-      // Call the simplest plugin
-      const info = simplestProcessor(frame);
-      
-      if (info) {
-        addLogJS(`Plugin returned frame info`);
-        updateFrameInfoJS(info);
-      } else {
-        addLogJS('Plugin returned null');
-      }
-    } catch (error) {
-      addLogJS(`Error: ${String(error)}`);
-    }
-  }, []);
+    const info = processPoseEstimation(frame);
+    addLogJS(`Got frame info: ${JSON.stringify(info)}`);
+    updateFrameInfoJS(info);
+  } catch (error) {
+    addLogJS(`Error: ${String(error)}`);
+  }
+}, []);
 
   const renderQuote = ({ item }) => (
     <View className="w-full items-center px-6" style={{ width }}>

@@ -1968,7 +1968,6 @@ DEPENDENCIES:
   - glog (from `../node_modules/react-native/third-party-podspecs/glog.podspec`)
   - hermes-engine (from `../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)
   - MediapipePoseEstimation (from `../modules/mediapipe-pose-estimation/ios`)
-  - MediaPipeTasksVision (= 0.10.12)
   - RCT-Folly (from `../node_modules/react-native/third-party-podspecs/RCT-Folly.podspec`)
   - RCT-Folly/Fabric (from `../node_modules/react-native/third-party-podspecs/RCT-Folly.podspec`)
   - RCTDeprecation (from `../node_modules/react-native/ReactApple/Libraries/RCTFoundation/RCTDeprecation`)
@@ -2320,6 +2319,6 @@ SPEC CHECKSUMS:
   Yoga: feb4910aba9742cfedc059e2b2902e22ffe9954a
   ZXingObjC: 8898711ab495761b2dbbdec76d90164a6d7e14c5
 
-PODFILE CHECKSUM: cea169bbf60bf3223461ff12cede1f8a6f227b71
+PODFILE CHECKSUM: cd2657a4988f6c843290779e51c659d8fb5a4421
 
 COCOAPODS: 1.15.2

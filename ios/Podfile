@@ -29,9 +29,6 @@ target 'veloraapp' do
       '--platform',
       'ios'
     ]
-  
-  # MediaPipe dependency for pose estimation
-  pod 'MediaPipeTasksVision', '0.10.12'
   end
 
   config = use_native_modules!(config_command)

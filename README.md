@@ -108,12 +108,12 @@ const result = await PoseLandmarker.detectPose(imageBase64);
 
 ## Velora Bike Fitting App - Native Modules Setup
 
-This README explains how the native modules are set up for the Velora bike fitting app, which uses Expo SDK 53, React Native Vision Camera, and MediaPipe for human pose estimation.
+This README explains how the native modules are set up for the Velora bike fitting app, which uses Expo SDK 52, React Native Vision Camera, and MediaPipe for human pose estimation.
 
 ## Architecture Overview
 
 The app uses the following components:
-- **Expo SDK 53** with custom native modules
+- **Expo SDK 52** with custom native modules
 - **React Native Vision Camera** for camera access
 - **MediaPipe** for pose estimation
 - Custom native Swift code for processing the camera frames
@@ -126,8 +126,8 @@ project-root/
 │   └── ios/
 │       └── templates/
 │           ├── PoseDetectorHelper.swift
-│           ├── PoseEstimationPlugin.swift
-│           └── VeloraPoseEstimation.m
+│           ├── PoseEstimationFrameProcessorPlugin.swift
+│           └── PoseEstimationFrameProcessorPlugin.m
 ├── plugins/
 │   └── withVeloraPoseEstimation/
 │       ├── index.js
@@ -231,11 +231,11 @@ If the automated setup doesn't work completely, you may need to:
 
 The key files for the native module are:
 
-1. **VeloraPoseEstimation.m**:
+1. **PoseEstimationFrameProcessorPlugin.m**:
    - Objective-C module that bridges Swift to React Native
    - Registers the frame processor plugin
 
-2. **PoseEstimationPlugin.swift**:
+2. **PoseEstimationFrameProcessorPlugin.swift**:
    - Implements the Vision Camera frame processor
    - Processes frames and returns pose data to JavaScript
 
@@ -251,7 +251,7 @@ The key files for the native module are:
    - Rebuild the app
 
 2. For better performance:
-   - Adjust processing interval in `PoseEstimationPlugin.swift`
+   - Adjust processing interval in `PoseEstimationFrameProcessorPlugin.swift`
    - Tune detection confidence thresholds
 
 3. To add additional MediaPipe models:

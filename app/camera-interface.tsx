@@ -6,36 +6,36 @@ import { useRunOnJS } from 'react-native-worklets-core';
 import { router } from "expo-router";
 import Svg, { Circle, Line } from 'react-native-svg';
 
-console.log('Initializing poseEstimation plugin...');
-const plugin = VisionCameraProxy.initFrameProcessorPlugin('poseEstimation', {});
+// console.log('Initializing poseEstimation plugin...');
+// const plugin = VisionCameraProxy.initFrameProcessorPlugin('poseEstimation', {});
 
-if (!plugin) {
-  console.error('Failed to initialize poseEstimation plugin');
-} else {
-  console.log('Successfully initialized poseEstimation plugin');
-}
+// if (!plugin) {
+//   console.error('Failed to initialize poseEstimation plugin');
+// } else {
+//   console.log('Successfully initialized poseEstimation plugin');
+// }
 
-/**
- * Processes a frame through the pose estimation plugin.
- */
-function poseEstimation(frame: Frame) {
-  'worklet';
+// /**
+//  * Processes a frame through the pose estimation plugin.
+//  */
+// function poseEstimation(frame: Frame) {
+//   'worklet';
   
-  if (!plugin || typeof plugin.call !== 'function') {
-    console.warn('❌ Plugin not initialized');
-    return [];
-  }
+//   if (!plugin || typeof plugin.call !== 'function') {
+//     console.warn('❌ Plugin not initialized');
+//     return [];
+//   }
   
-  try {
-    // Call the native plugin
-    const result = plugin.call(frame, {});
-    console.log('[worklet] Plugin call result type:', result ? typeof result : 'null');
-    return result || [];
-  } catch (e) {
-    console.log('[worklet] Pose estimation error:', String(e));
-    return [];
-  }
-}
+//   try {
+//     // Call the native plugin
+//     const result = plugin.call(frame, {});
+//     console.log('[worklet] Plugin call result type:', result ? typeof result : 'null');
+//     return result || [];
+//   } catch (e) {
+//     console.log('[worklet] Pose estimation error:', String(e));
+//     return [];
+//   }
+// }
 
 // Keypoint connections for basic pose skeleton
 const connections = [
@@ -90,20 +90,20 @@ export default function CameraInterface() {
     'worklet'
     if (!isAnalyzing) return;
 
-    try {
-      addDebugInfoJS(`Processing frame: ${frame.width}x${frame.height}`);
+    // try {
+    //   addDebugInfoJS(`Processing frame: ${frame.width}x${frame.height}`);
       
-      const pose = poseEstimation(frame);
+    //   const pose = poseEstimation(frame);
       
-      if (pose?.length > 0) {
-        addDebugInfoJS(`Detected pose with ${pose[0].length} landmarks`);
-        handlePoseDetectionJS(pose[0]);
-      } else {
-        addDebugInfoJS('No pose detected');
-      }
-    } catch (error) {
-      addDebugInfoJS(`Error: ${String(error)}`);
-    }
+    //   if (pose?.length > 0) {
+    //     addDebugInfoJS(`Detected pose with ${pose[0].length} landmarks`);
+    //     handlePoseDetectionJS(pose[0]);
+    //   } else {
+    //     addDebugInfoJS('No pose detected');
+    //   }
+    // } catch (error) {
+    //   addDebugInfoJS(`Error: ${String(error)}`);
+    // }
   }, [isAnalyzing]);
 
   const handleStartAnalysis = () => {

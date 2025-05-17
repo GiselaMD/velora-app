@@ -37,8 +37,9 @@ class PoseDetectorHelper: NSObject {
 
     guard let modelPath = Bundle.main.path(forResource: basename, ofType: fileExtension) else {
       throw NSError(
-        domain: "MODEL_NOT_FOUND", code: 0, userInfo: ["message": "Model \(modelName) not found"])
+        domain: "MODEL_NOT_FOUND", code: 0, userInfo: ["message": "Model \\(modelName) not found in Bundle.main. Looked for \(basename).\(fileExtension)"]) // Added more detail
     }
+
 
     self.modelPath = modelPath
     super.init()
