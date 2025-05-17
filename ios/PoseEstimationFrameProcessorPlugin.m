@@ -1,10 +1,3 @@
-//
-//  PoseEstimationFrameProcessorPlugin.m
-//  veloraapp
-//
-//  Created by Gisela Difini on 5/17/25.
-//
-
 // PoseEstimationFrameProcessorPlugin.m
 #import <VisionCamera/FrameProcessorPlugin.h>
 #import <VisionCamera/FrameProcessorPluginRegistry.h>
@@ -16,5 +9,4 @@
 #import "veloraapp-Swift.h"
 #endif
 
-// Make sure this matches your Swift class name exactly
 VISION_EXPORT_SWIFT_FRAME_PROCESSOR(PoseEstimationFrameProcessorPlugin, poseEstimation)
