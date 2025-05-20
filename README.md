@@ -82,24 +82,30 @@ Here's what each main directory typically contains:
 
 ## 🔌 Native Pose Estimation Module
 
-- Located at: `modules/mediapipe-pose-estimation`
-- Written in Swift using [MediaPipeTasksVision](https://developers.google.com/mediapipe/solutions/vision/pose_landmarker)
-- Exposed to JS using [`expo-modules`](https://docs.expo.dev/modules/overview/)
+The app uses React Native Vision Camera's Frame Processor Plugins for real-time pose estimation:
 
-Example Swift API:
+- Located in `ios/`:
+  - `PoseEstimationFrameProcessorPlugin.swift`
+  - `PoseEstimationFrameProcessorPlugin.m`
+  - `PoseDetectorHelper.swift`
+  - `pose_landmarker_full.task`
+- Uses MediaPipe Tasks Vision for iOS
+- Integrated using Vision Camera Frame Processor Plugin system
 
-```swift
-Function("detectPose") { (imageBase64: String) -> [[[String: Any]]] in
-  ...
+Example frame processor usage:
+```typescript
+import { Camera } from 'react-native-vision-camera';
+import { processPoseEstimation } from './utils/frameProcessor';
+
+function PoseDetection() {
+  const frameProcessor = useFrameProcessor((frame) => {
+    'worklet';
+    const poses = processPoseEstimation(frame);
+    console.log(`Detected poses:`, poses);
+  }, []);
+
+  return <Camera frameProcessor={frameProcessor} {...props} />;
 }
-```
-
-Example usage:
-
-```js
-import PoseLandmarker from 'expo-modules-core';
-
-const result = await PoseLandmarker.detectPose(imageBase64);
 ```
 
 ---
@@ -108,7 +114,35 @@ const result = await PoseLandmarker.detectPose(imageBase64);
 
 ## Velora Bike Fitting App - Native Modules Setup
 
-This README explains how the native modules are set up for the Velora bike fitting app, which uses Expo SDK 52, React Native Vision Camera, and MediaPipe for human pose estimation.
+The app uses Vision Camera Frame Processor Plugins for native pose estimation:
+
+### Frame Processor Files:
+ - Swift plugin implementation
+ - Objective-C bridge
+ - MediaPipe pose detection helper
+ - MediaPipe task model
+
+### Dependencies
+```
+   # ios/Podfile
+   pod 'MediaPipeTasksVision', '0.10.12'
+```
+
+### Building the app
+
+```bash
+# Clean build (removes ios/android folders)
+npm run clean
+
+# Generate native projects
+npx expo prebuild
+
+# Install pods
+cd ios && pod install && cd ..
+
+# Run the app
+npx expo run:ios
+```
 
 ## Architecture Overview
 
@@ -122,6 +156,14 @@ The app uses the following components:
 
 ```
 project-root/
+├── ios/
+│   ├── PoseEstimationFrameProcessorPlugin.swift   # Frame processor implementation
+│   ├── PoseEstimationFrameProcessorPlugin.m       # Plugin registration
+│   ├── PoseDetectorHelper.swift                   # MediaPipe integration
+│   └── pose_landmarker_full.task                  # MediaPipe model
+└── app/
+│   └── utils/
+│      └── frameProcessor.ts                       # JS/TS frame processor code
 ├── native/
 │   └── ios/
 │       └── templates/
@@ -135,8 +177,6 @@ project-root/
 │       ├── withXcodeModifications.js
 │       ├── withMediaPipePodfileMod.js
 │       └── withModelPostInstall.js
-├── scripts/
-│   └── setup-native.js
 ├── app.json
 └── package.json
 ```
@@ -150,8 +190,6 @@ The setup consists of several parts working together:
    - `withXcodeModifications.js`: Adds the Swift files to the Xcode project
    - `withMediaPipePodfileMod.js`: Adds MediaPipe dependency to Podfile
    - `withModelPostInstall.js`: Downloads the MediaPipe model if needed
-3. **Setup Script**: A Node.js script that runs after prebuild to copy files and download models
-4. **Build Hooks**: Configured in app.json to run scripts at the right time
 
 ## Workflow
 
@@ -227,6 +265,7 @@ If the automated setup doesn't work completely, you may need to:
    - Make sure the Swift version is set to 5.0 in build settings
    - Verify that the Swift files are correctly added to the project
 
+
 ## Key Files
 
 The key files for the native module are:
@@ -260,12 +299,13 @@ The key files for the native module are:
 
 ## Developer Commands
 
-- `npm run clean`: Remove the iOS and Android directories
-- `npx expo prebuild`: Regenerate the native project
-- `node scripts/setup-native.js`: Set up native modules manually
-- `npx expo run:ios`: Build and run the iOS app
-- `npm run fullbuild`: Clean, prebuild, and run in one command
-
+```bash
+# Development
+npm run ios:device    # Run on connected device
+npm run xcode        # Open Xcode project
+npm run clean        # Clean build files
+npm run fullbuild    # Full rebuild and run
+```
 
 ---
 
@@ -275,17 +315,6 @@ The key files for the native module are:
  - Use a side view angle for best results
 
  - Camera should remain steady for accurate detection
-
- ---
-
- ### 🧪 Testing
- ```sh
- # Run unit tests (Jest)
-npm test
-
-# Lint your code
-npm run lint
-```
 
 ### 👩‍💻 Author
 Made with ❤️ by @GiselaMD
