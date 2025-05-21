@@ -9,7 +9,10 @@ import {
 } from "react-native";
 
 export default function AnalysisResults() {
-  const { bodyAngles } = useLocalSearchParams();
+  const params = useLocalSearchParams<{ bodyAngles?: string }>();
+  const bodyAngles = params.bodyAngles
+    ? JSON.parse(params.bodyAngles)
+    : { kneeAngle: 0, hipAngle: 0, backAngle: 0 };
 
   //   const bodyAngles = route.params?.bodyAngles || {
   //     kneeAngle: 32,
