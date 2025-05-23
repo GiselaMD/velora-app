@@ -1,276 +1,506 @@
-// app/camera-interface.tsx
-import React, { useEffect, useState } from "react";
-import { View, Text, SafeAreaView, TouchableOpacity, Dimensions } from "react-native";
-import { Camera, useCameraDevice, useCameraPermission, useFrameProcessor, VisionCameraProxy, type Frame} from 'react-native-vision-camera';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  ScrollView,
+  Dimensions,
+} from "react-native";
+import { Camera, useCameraDevice, useCameraPermission, useFrameProcessor } from 'react-native-vision-camera';
 import { useRunOnJS } from 'react-native-worklets-core';
+import { processPoseEstimation } from '../plugins/frameProcessor';
 import { router } from "expo-router";
-import Svg, { Circle, Line } from 'react-native-svg';
+import Svg, { Line } from 'react-native-svg';
 
-// console.log('Initializing poseEstimation plugin...');
-// const plugin = VisionCameraProxy.initFrameProcessorPlugin('poseEstimation', {});
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
-// if (!plugin) {
-//   console.error('Failed to initialize poseEstimation plugin');
-// } else {
-//   console.log('Successfully initialized poseEstimation plugin');
-// }
-
-// /**
-//  * Processes a frame through the pose estimation plugin.
-//  */
-// function poseEstimation(frame: Frame) {
-//   'worklet';
-  
-//   if (!plugin || typeof plugin.call !== 'function') {
-//     console.warn('❌ Plugin not initialized');
-//     return [];
-//   }
-  
-//   try {
-//     // Call the native plugin
-//     const result = plugin.call(frame, {});
-//     console.log('[worklet] Plugin call result type:', result ? typeof result : 'null');
-//     return result || [];
-//   } catch (e) {
-//     console.log('[worklet] Pose estimation error:', String(e));
-//     return [];
-//   }
-// }
-
-// Keypoint connections for basic pose skeleton
-const connections = [
-  [11, 13], // Right shoulder to right elbow
-  [13, 15], // Right elbow to right wrist
-  [12, 14], // Left shoulder to left elbow
-  [14, 16], // Left elbow to left wrist
-  [11, 12], // Shoulders
-  [23, 24], // Hips
-  [11, 23], // Right shoulder to right hip
-  [12, 24], // Left shoulder to left hip
-  [23, 25], // Right hip to right knee
-  [24, 26], // Left hip to left knee
-  [25, 27], // Right knee to right ankle
-  [26, 28], // Left knee to left ankle
-];
+// Key landmarks for bike fitting
+const KEY_LANDMARKS = {
+  leftShoulder: 11,
+  rightShoulder: 12,
+  leftElbow: 13,
+  rightElbow: 14,
+  leftWrist: 15,
+  rightWrist: 16,
+  leftHip: 23,
+  rightHip: 24,
+  leftKnee: 25,
+  rightKnee: 26,
+  leftAnkle: 27,
+  rightAnkle: 28,
+};
 
 interface PoseLandmark {
   x: number;
   y: number;
   z: number;
   visibility: number;
-  presence: number;
+}
+
+interface PoseData {
+  detected: boolean;
+  keyPoints: Record<string, { x: number; y: number; visibility: number }>;
+  totalLandmarks: number;
+  rawLandmarks?: PoseLandmark[][];
 }
 
 export default function CameraInterface() {
+  const [frameInfo, setFrameInfo] = useState<any>(null);
+  const [poseData, setPoseData] = useState<PoseData | null>(null);
+  const [logs, setLogs] = useState<string[]>([]);
+  const [showDebug, setShowDebug] = useState(false);
+  
+  // Camera setup
   const { hasPermission, requestPermission } = useCameraPermission();
-  const device = useCameraDevice('front');
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [landmarks, setLandmarks] = useState<PoseLandmark[]>([]);
-  const [debugInfo, setDebugInfo] = useState<string[]>([]);
-  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-
+  const device = useCameraDevice('front'); // Using back camera for bike fitting
+  
+  // Request camera permission on mount
   useEffect(() => {
-    if (!hasPermission) requestPermission();
-  }, [hasPermission]);
-
-  // Create JS functions to be called from worklets
-  const handlePoseDetection = (detectedLandmarks: PoseLandmark[]) => {
-    setLandmarks(detectedLandmarks);
+    if (!hasPermission) {
+      requestPermission();
+    }
+  }, [hasPermission, requestPermission]);
+  
+  // Create JS functions to update state from worklets
+  const addLog = (message: string) => {
+    console.log(message);
+    setLogs(prev => [`${new Date().toLocaleTimeString()}: ${message}`, ...prev.slice(0, 19)]);
   };
   
-  const addDebugInfo = (info: string) => {
-    setDebugInfo(prev => [info, ...prev.slice(0, 9)]); // Keep last 10 messages
-  };
-
-  // Create worklet-compatible versions using useRunOnJS
-  const handlePoseDetectionJS = useRunOnJS(handlePoseDetection, []);
-  const addDebugInfoJS = useRunOnJS(addDebugInfo, []);
-
-  const frameProcessor = useFrameProcessor((frame) => {
-    'worklet'
-    if (!isAnalyzing) return;
-
-    // try {
-    //   addDebugInfoJS(`Processing frame: ${frame.width}x${frame.height}`);
+  const updateFrameInfo = (info: any) => {
+    setFrameInfo(info);
+    
+    // Process pose data if available
+    if (info && Array.isArray(info) && info.length > 0) {
+      // MediaPipe returns array of poses, each pose is array of landmarks
+      const landmarks = info[0]; // First pose
       
-    //   const pose = poseEstimation(frame);
-      
-    //   if (pose?.length > 0) {
-    //     addDebugInfoJS(`Detected pose with ${pose[0].length} landmarks`);
-    //     handlePoseDetectionJS(pose[0]);
-    //   } else {
-    //     addDebugInfoJS('No pose detected');
-    //   }
-    // } catch (error) {
-    //   addDebugInfoJS(`Error: ${String(error)}`);
-    // }
-  }, [isAnalyzing]);
-
-  const handleStartAnalysis = () => {
-    if (isAnalyzing) {
-      // If we have landmarks, calculate angles and navigate
-      if (landmarks.length > 0) {
-        const angles = calculateBodyAngles(landmarks);
-        router.push({
-          pathname: '/analysis-results',
-          params: { bodyAngles: JSON.stringify(angles) }
+      if (landmarks && landmarks.length > 0) {
+        const keyPoints: Record<string, { x: number; y: number; visibility: number }> = {};
+        
+        // Extract key landmarks for bike fitting
+        Object.entries(KEY_LANDMARKS).forEach(([name, index]) => {
+          if (landmarks[index]) {
+            keyPoints[name] = {
+              x: landmarks[index].x,
+              y: landmarks[index].y,
+              visibility: landmarks[index].visibility || 0,
+            };
+          }
         });
+        
+        setPoseData({
+          detected: true,
+          keyPoints,
+          totalLandmarks: landmarks.length,
+          rawLandmarks: info,
+        });
+        
+        addLog(`Pose detected with ${landmarks.length} landmarks`);
       }
+    } else if (info && info.error) {
+      addLog(`Error: ${info.error}`);
+      setPoseData({ detected: false, keyPoints: {}, totalLandmarks: 0 });
     } else {
-      setIsAnalyzing(true);
-      setDebugInfo(['Starting analysis...']);
+      setPoseData({ detected: false, keyPoints: {}, totalLandmarks: 0 });
     }
   };
-
-  const calculateBodyAngles = (poses: PoseLandmark[]) => {
-    // These indices are based on MediaPipe's pose landmark model
-    const hipIdx = 24; // Right hip
-    const kneeIdx = 26; // Right knee
-    const ankleIdx = 28; // Right ankle
-    const shoulderIdx = 12; // Right shoulder
-
-    const kneeAngle = calculateAngle(
-      poses[hipIdx],
-      poses[kneeIdx],
-      poses[ankleIdx]
-    );
-
-    const hipAngle = calculateAngle(
-      poses[shoulderIdx],
-      poses[hipIdx],
-      poses[kneeIdx]
-    );
-
-    const backAngle = calculateVerticalAngle(
-      poses[shoulderIdx],
-      poses[hipIdx]
-    );
-
-    return {
-      kneeAngle: Math.round(kneeAngle),
-      hipAngle: Math.round(hipAngle),
-      backAngle: Math.round(backAngle)
-    };
-  };
-
-  const calculateAngle = (a: PoseLandmark, b: PoseLandmark, c: PoseLandmark) => {
-    const radians = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
-    let angle = Math.abs(radians * 180.0 / Math.PI);
+  
+  // Create worklet-compatible versions
+  const addLogJS = useRunOnJS(addLog, []);
+  const updateFrameInfoJS = useRunOnJS(updateFrameInfo, []);
+  
+  // Frame processor
+  const frameProcessor = useFrameProcessor((frame) => {
+    'worklet';
     
-    if (angle > 180.0) {
-      angle = 360 - angle;
+    try {
+      const result = processPoseEstimation(frame);
+      updateFrameInfoJS(result);
+    } catch (error) {
+      addLogJS(`Frame processor error: ${String(error)}`);
+    }
+  }, []);
+
+  // Render pose visualization overlay
+  const renderPoseOverlay = () => {
+    if (!poseData || !poseData.detected || !poseData.rawLandmarks) return null;
+    
+    const landmarks = poseData.rawLandmarks[0]; // First pose
+    const cameraAspectRatio = device ? device.format?.videoHeight / device.format?.videoWidth : 1;
+    const screenAspectRatio = screenHeight / screenWidth;
+    
+    // Calculate scaling factors
+    let overlayWidth = screenWidth;
+    let overlayHeight = screenHeight;
+    
+    if (cameraAspectRatio > screenAspectRatio) {
+      overlayWidth = screenHeight / cameraAspectRatio;
+    } else {
+      overlayHeight = screenWidth * cameraAspectRatio;
     }
     
-    return angle;
+    return (
+      <View style={[styles.poseOverlay, { width: overlayWidth, height: overlayHeight }]}>
+        {/* Draw skeleton connections */}
+        <Svg width={overlayWidth} height={overlayHeight} style={StyleSheet.absoluteFillObject}>
+          {/* Body connections */}
+          {renderConnection(landmarks, 11, 12, overlayWidth, overlayHeight)} {/* Shoulders */}
+          {renderConnection(landmarks, 11, 13, overlayWidth, overlayHeight)} {/* Left arm upper */}
+          {renderConnection(landmarks, 13, 15, overlayWidth, overlayHeight)} {/* Left arm lower */}
+          {renderConnection(landmarks, 12, 14, overlayWidth, overlayHeight)} {/* Right arm upper */}
+          {renderConnection(landmarks, 14, 16, overlayWidth, overlayHeight)} {/* Right arm lower */}
+          {renderConnection(landmarks, 11, 23, overlayWidth, overlayHeight)} {/* Left torso */}
+          {renderConnection(landmarks, 12, 24, overlayWidth, overlayHeight)} {/* Right torso */}
+          {renderConnection(landmarks, 23, 24, overlayWidth, overlayHeight)} {/* Hips */}
+          {renderConnection(landmarks, 23, 25, overlayWidth, overlayHeight)} {/* Left leg upper */}
+          {renderConnection(landmarks, 25, 27, overlayWidth, overlayHeight)} {/* Left leg lower */}
+          {renderConnection(landmarks, 24, 26, overlayWidth, overlayHeight)} {/* Right leg upper */}
+          {renderConnection(landmarks, 26, 28, overlayWidth, overlayHeight)} {/* Right leg lower */}
+        </Svg>
+        
+        {/* Draw landmark points */}
+        {landmarks.map((landmark: PoseLandmark, index: number) => {
+          if (landmark.visibility < 0.5) return null;
+          
+          const x = landmark.x * overlayWidth;
+          const y = landmark.y * overlayHeight;
+          
+          return (
+            <View
+              key={index}
+              style={[
+                styles.landmarkDot,
+                {
+                  left: x - 4,
+                  top: y - 4,
+                  backgroundColor: getColorForLandmark(index),
+                }
+              ]}
+            />
+          );
+        })}
+      </View>
+    );
+  };
+  
+  const renderConnection = (
+    landmarks: PoseLandmark[],
+    index1: number,
+    index2: number,
+    width: number,
+    height: number
+  ) => {
+    if (!landmarks[index1] || !landmarks[index2]) return null;
+    if (landmarks[index1].visibility < 0.5 || landmarks[index2].visibility < 0.5) return null;
+    
+    return (
+      <Line
+        x1={landmarks[index1].x * width}
+        y1={landmarks[index1].y * height}
+        x2={landmarks[index2].x * width}
+        y2={landmarks[index2].y * height}
+        stroke="#4ADE80"
+        strokeWidth="2"
+      />
+    );
+  };
+  
+  const getColorForLandmark = (index: number) => {
+    // Color code different body parts
+    if (index >= 0 && index <= 10) return '#60A5FA'; // Face - blue
+    if (index >= 11 && index <= 16) return '#F87171'; // Arms - red
+    if (index >= 17 && index <= 22) return '#FBBF24'; // Hands - yellow
+    if (index >= 23 && index <= 28) return '#4ADE80'; // Legs - green
+    return '#A78BFA'; // Other - purple
   };
 
-  const calculateVerticalAngle = (a: PoseLandmark, b: PoseLandmark) => {
-    const radians = Math.atan2(b.y - a.y, b.x - a.x);
-    return Math.abs(radians * 180.0 / Math.PI);
+  // Render pose info panel
+  const renderPoseInfo = () => {
+    if (!poseData || !poseData.detected) {
+      return (
+        <View style={styles.infoPanel}>
+          <Text style={styles.infoTitle}>Waiting for pose detection...</Text>
+          <Text style={styles.infoText}>Position yourself in view of the camera</Text>
+        </View>
+      );
+    }
+    
+    const keyPoints = poseData.keyPoints;
+    const visiblePoints = Object.entries(keyPoints).filter(([_, point]) => point.visibility > 0.5);
+    
+    return (
+      <View style={styles.infoPanel}>
+        <Text style={styles.infoTitle}>Pose Detected</Text>
+        <Text style={styles.infoText}>
+          Tracking {visiblePoints.length}/{Object.keys(KEY_LANDMARKS).length} key points
+        </Text>
+        <View style={styles.landmarkGrid}>
+          {Object.entries(keyPoints).map(([name, point]) => (
+            <View key={name} style={styles.landmarkItem}>
+              <Text style={styles.landmarkName}>{name}:</Text>
+              <Text style={[
+                styles.landmarkValue,
+                { color: point.visibility > 0.5 ? '#4ADE80' : '#EF4444' }
+              ]}>
+                {point.visibility > 0.5 ? '✓' : '✗'}
+              </Text>
+            </View>
+          ))}
+        </View>
+      </View>
+    );
   };
 
   if (!hasPermission) {
     return (
-      <View className="flex-1 justify-center items-center bg-gray-100">
-        <Text className="mb-4 text-center">Camera access required</Text>
-        <TouchableOpacity onPress={requestPermission} className="bg-violet-600 px-6 py-3 rounded-full">
-          <Text className="text-white font-bold text-base">Grant Access</Text>
-        </TouchableOpacity>
-      </View>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.permissionContainer}>
+          <Text style={styles.permissionText}>Camera access is required for pose detection</Text>
+          <TouchableOpacity onPress={requestPermission} style={styles.permissionButton}>
+            <Text style={styles.permissionButtonText}>Grant Camera Access</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Text style={styles.backButtonText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
     );
   }
 
-  if (device == null) {
+  if (!device) {
     return (
-      <View className="flex-1 justify-center items-center bg-gray-100">
-        <Text className="mb-4 text-center">No camera device found</Text>
-      </View>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.permissionContainer}>
+          <Text style={styles.permissionText}>No camera device found</Text>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Text style={styles.backButtonText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1">
+    <View style={styles.container}>
       <Camera
-        style={{ flex: 1 }}
+        style={StyleSheet.absoluteFillObject}
         device={device}
         isActive={true}
         frameProcessor={frameProcessor}
       />
-
-      {/* Pose Visualization */}
-      {landmarks.length > 0 && (
-        <Svg
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: screenWidth,
-            height: screenHeight,
-          }}
-        >
-          {/* Draw connections */}
-          {connections.map((connection, index) => {
-            const [start, end] = connection;
-            const startLandmark = landmarks[start];
-            const endLandmark = landmarks[end];
-            
-            if (startLandmark && endLandmark &&
-                startLandmark.visibility > 0.5 && endLandmark.visibility > 0.5) {
-              return (
-                <Line
-                  key={index}
-                  x1={startLandmark.x * screenWidth}
-                  y1={startLandmark.y * screenHeight}
-                  x2={endLandmark.x * screenWidth}
-                  y2={endLandmark.y * screenHeight}
-                  stroke="white"
-                  strokeWidth="2"
-                />
-              );
-            }
-            return null;
-          })}
-
-          {/* Draw landmarks */}
-          {landmarks.map((landmark, index) => (
-            landmark.visibility > 0.5 && (
-              <Circle
-                key={index}
-                cx={landmark.x * screenWidth}
-                cy={landmark.y * screenHeight}
-                r="4"
-                fill="#6D28D9"
-                stroke="white"
-                strokeWidth="2"
-              />
-            )
-          ))}
-        </Svg>
-      )}
-
-      {/* Debug Info */}
-      <View className="absolute top-12 left-4 right-4 bg-black/70 rounded-lg p-4 max-h-40">
-        {debugInfo.map((info, index) => (
-          <Text key={index} className="text-white text-xs mb-1">{info}</Text>
-        ))}
-      </View>
-
-      <TouchableOpacity
-        onPress={handleStartAnalysis}
-        className="absolute bottom-10 left-0 right-0 items-center"
-      >
-        <Text className="bg-violet-600 px-6 py-3 rounded-full text-white font-bold text-base">
-          {isAnalyzing ? 'Complete Analysis' : 'Start Analysis'}
-        </Text>
-      </TouchableOpacity>
-
-      {isAnalyzing && (
-        <View className="absolute top-2 left-4 right-4 bg-black/50 rounded-lg p-4">
-          <Text className="text-white text-center">
-            Position yourself in the frame and hold your cycling position
-          </Text>
+      
+      {/* Pose skeleton overlay */}
+      {renderPoseOverlay()}
+      
+      {/* UI Overlay */}
+      <SafeAreaView style={styles.overlay}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.closeButton}>
+            <Text style={styles.closeButtonText}>✕</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Bike Fit Analysis</Text>
+          <TouchableOpacity onPress={() => setShowDebug(!showDebug)} style={styles.debugButton}>
+            <Text style={styles.debugButtonText}>{showDebug ? 'Hide' : 'Debug'}</Text>
+          </TouchableOpacity>
         </View>
-      )}
-    </SafeAreaView>
+        
+        {/* Pose Info Panel */}
+        {renderPoseInfo()}
+        
+        {/* Debug Panel */}
+        {showDebug && (
+          <ScrollView style={styles.debugPanel}>
+            <Text style={styles.debugTitle}>Debug Logs:</Text>
+            {logs.map((log, index) => (
+              <Text key={index} style={styles.logText}>{log}</Text>
+            ))}
+          </ScrollView>
+        )}
+        
+        {/* Action Button */}
+        <View style={styles.bottomContainer}>
+          <TouchableOpacity 
+            style={[styles.captureButton, { opacity: poseData?.detected ? 1 : 0.5 }]}
+            disabled={!poseData?.detected}
+            onPress={() => {
+              // TODO: Implement capture/analysis logic
+              console.log('Capturing pose data...');
+            }}
+          >
+            <Text style={styles.captureButtonText}>Analyze Position</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: 'black',
+  },
+  overlay: {
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+  permissionContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  permissionText: {
+    color: 'white',
+    fontSize: 18,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  permissionButton: {
+    backgroundColor: '#6D28D9',
+    paddingHorizontal: 30,
+    paddingVertical: 15,
+    borderRadius: 25,
+    marginBottom: 15,
+  },
+  permissionButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  backButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  backButtonText: {
+    color: 'white',
+    fontSize: 16,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 10,
+  },
+  closeButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    color: 'white',
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  headerTitle: {
+    color: 'white',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  debugButton: {
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 15,
+  },
+  debugButtonText: {
+    color: 'white',
+    fontSize: 14,
+  },
+  infoPanel: {
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    marginHorizontal: 20,
+    borderRadius: 12,
+    padding: 15,
+  },
+  infoTitle: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  infoText: {
+    color: 'white',
+    fontSize: 14,
+    marginBottom: 10,
+  },
+  landmarkGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 10,
+  },
+  landmarkItem: {
+    flexDirection: 'row',
+    width: '50%',
+    paddingVertical: 2,
+  },
+  landmarkName: {
+    color: 'white',
+    fontSize: 12,
+    flex: 1,
+  },
+  landmarkValue: {
+    fontSize: 12,
+    width: 20,
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
+  debugPanel: {
+    position: 'absolute',
+    top: 150,
+    left: 20,
+    right: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    borderRadius: 8,
+    padding: 10,
+    maxHeight: 200,
+  },
+  debugTitle: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  logText: {
+    color: 'white',
+    fontSize: 11,
+    marginBottom: 3,
+    fontFamily: 'monospace',
+  },
+  bottomContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  captureButton: {
+    backgroundColor: '#6D28D9',
+    paddingVertical: 18,
+    borderRadius: 30,
+    alignItems: 'center',
+  },
+  captureButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  poseOverlay: {
+    position: 'absolute',
+    alignSelf: 'center',
+    top: '50%',
+    transform: [{ translateY: -screenHeight / 2 }],
+  },
+  landmarkDot: {
+    position: 'absolute',
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: 'white',
+  },
+});
