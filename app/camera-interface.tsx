@@ -1,145 +1,91 @@
-import React, { useState, useEffect } from "react";
+// CameraInterface.js
+import React, { useState, useEffect, useCallback } from "react";
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  Dimensions,
+  View, Text, TouchableOpacity, StyleSheet,
+  SafeAreaView, Dimensions, AppState,
 } from "react-native";
-import { Camera, useCameraDevice, useCameraPermission, useFrameProcessor } from 'react-native-vision-camera';
+import {
+  Camera, useCameraDevice, useCameraPermission,
+  useFrameProcessor
+} from 'react-native-vision-camera';
 import { useRunOnJS } from 'react-native-worklets-core';
-import { processPoseEstimation } from '../plugins/frameProcessor';
+import { useSharedValue } from 'react-native-reanimated';
 import { router } from "expo-router";
-import Svg, { Line } from 'react-native-svg';
+
+import { processPoseEstimation } from '../plugins/frameProcessor'; // Ensure this path is correct
+import PoseOverlay from '../components/PoseOverlay'; // Ensure this path is correct
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
-const KEY_LANDMARKS = {
-  leftShoulder: 11,
-  rightShoulder: 12,
-  leftElbow: 13,
-  rightElbow: 14,
-  leftWrist: 15,
-  rightWrist: 16,
-  leftHip: 23,
-  rightHip: 24,
-  leftKnee: 25,
-  rightKnee: 26,
-  leftAnkle: 27,
-  rightAnkle: 28,
-};
-
 export default function CameraInterface() {
-  const [frameInfo, setFrameInfo] = useState(null);
-  const [poseData, setPoseData] = useState(null);
-  const [cameraActive, setCameraActive] = useState(true);
+  const [appIsActive, setAppIsActive] = useState(AppState.currentState === 'active');
   const { hasPermission, requestPermission } = useCameraPermission();
   const device = useCameraDevice('front');
 
+  // `detected` field removed from poseDataShared
+  const poseDataShared = useSharedValue({
+    rawLandmarks: [],
+    totalLandmarks: 0,
+  });
+
   useEffect(() => {
-    if (!hasPermission) requestPermission();
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      setAppIsActive(nextAppState === 'active');
+    });
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!hasPermission) {
+      requestPermission();
+    }
   }, [hasPermission, requestPermission]);
 
-  const addLog = (message) => {
-    console.log(message);
-  };
-
-  const updateFrameInfo = (info) => {
-    setFrameInfo(info);
-    if (info && Array.isArray(info) && info.length > 0) {
-      const landmarks = info[0];
-      if (landmarks && landmarks.length > 0) {
-        const keyPoints = {};
-        Object.entries(KEY_LANDMARKS).forEach(([name, index]) => {
-          if (landmarks[index]) {
-            keyPoints[name] = {
-              x: landmarks[index].x,
-              y: landmarks[index].y,
-              visibility: landmarks[index].visibility || 0,
-            };
-          }
-        });
-        setPoseData({ detected: true, keyPoints, totalLandmarks: landmarks.length, rawLandmarks: info });
+  // `detected` field removed from updates
+  const updateFrameInfoWithJS = useCallback((rawPoseResult) => {
+    if (rawPoseResult && Array.isArray(rawPoseResult) && rawPoseResult.length > 0) {
+      const landmarksArray = rawPoseResult[0]; // Assuming first element contains the landmarks
+      if (landmarksArray && landmarksArray.length > 0) {
+        poseDataShared.value = {
+          rawLandmarks: rawPoseResult, // Store the full raw result (e.g., [[landmark1, landmark2,...]])
+          totalLandmarks: landmarksArray.length,
+        };
+      } else {
+        // No valid landmarks in the result
+        poseDataShared.value = { rawLandmarks: [], totalLandmarks: 0 };
       }
     } else {
-      setPoseData({ detected: false, keyPoints: {}, totalLandmarks: 0 });
+      // No pose result or empty result
+      poseDataShared.value = { rawLandmarks: [], totalLandmarks: 0 };
     }
-  };
+  }, [poseDataShared]);
 
-  const addLogJS = useRunOnJS(addLog, []);
-  const updateFrameInfoJS = useRunOnJS(updateFrameInfo, []);
+  const runUpdateFrameInfo = useRunOnJS(updateFrameInfoWithJS, [updateFrameInfoWithJS]);
 
   const frameProcessor = useFrameProcessor((frame) => {
     'worklet';
     try {
       const result = processPoseEstimation(frame);
-      updateFrameInfoJS(result);
+      runUpdateFrameInfo(result);
     } catch (error) {
-      addLogJS(`Frame processor error: ${String(error)}`);
+      console.error('Frame processor error:', error.message || error);
     }
-  }, []);
-
-  const renderConnection = (landmarks, index1, index2, width, height) => {
-    if (!landmarks[index1] || !landmarks[index2]) return null;
-    if (landmarks[index1].visibility < 0.5 || landmarks[index2].visibility < 0.5) return null;
-    const getCoord = (landmark) => {
-      const x = landmark.x * width;
-      return {
-        x: device?.position === 'front' ? width - x : x,
-        y: landmark.y * height,
-      };
-    };
-    const p1 = getCoord(landmarks[index1]);
-    const p2 = getCoord(landmarks[index2]);
-    return <Line x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke="#4ADE80" strokeWidth="2" />;
-  };
-
-  const renderPoseOverlay = () => {
-    if (!poseData || !poseData.detected || !poseData.rawLandmarks) return null;
-    const landmarks = poseData.rawLandmarks[0];
-    const overlayWidth = screenWidth;
-    const overlayHeight = screenHeight;
-    return (
-      <View style={styles.poseOverlay} pointerEvents="none">
-        <Svg width={overlayWidth} height={overlayHeight} style={StyleSheet.absoluteFillObject}>
-          {renderConnection(landmarks, 11, 12, overlayWidth, overlayHeight)}
-          {renderConnection(landmarks, 11, 13, overlayWidth, overlayHeight)}
-          {renderConnection(landmarks, 13, 15, overlayWidth, overlayHeight)}
-          {renderConnection(landmarks, 12, 14, overlayWidth, overlayHeight)}
-          {renderConnection(landmarks, 14, 16, overlayWidth, overlayHeight)}
-          {renderConnection(landmarks, 11, 23, overlayWidth, overlayHeight)}
-          {renderConnection(landmarks, 12, 24, overlayWidth, overlayHeight)}
-          {renderConnection(landmarks, 23, 24, overlayWidth, overlayHeight)}
-          {renderConnection(landmarks, 23, 25, overlayWidth, overlayHeight)}
-          {renderConnection(landmarks, 25, 27, overlayWidth, overlayHeight)}
-          {renderConnection(landmarks, 24, 26, overlayWidth, overlayHeight)}
-          {renderConnection(landmarks, 26, 28, overlayWidth, overlayHeight)}
-        </Svg>
-        {landmarks.map((lm, i) => {
-          if (lm.visibility < 0.5) return null;
-          const x = lm.x * overlayWidth;
-          const y = lm.y * overlayHeight;
-          const finalX = device?.position === 'front' ? overlayWidth - x : x;
-          return <View key={i} style={[styles.landmarkDot, { left: finalX - 4, top: y - 4 }]} />;
-        })}
-      </View>
-    );
-  };
+  }, [runUpdateFrameInfo]);
 
   const handleExit = () => {
-    setCameraActive(false);
-    setTimeout(() => router.replace("/"), 200);
+    router.replace("/");
   };
 
   if (!hasPermission) {
     return (
       <SafeAreaView style={styles.container}>
-        <Text style={styles.permissionText}>Camera access is required</Text>
+        <Text style={styles.permissionText}>Camera access is required to continue.</Text>
         <TouchableOpacity onPress={requestPermission} style={styles.permissionButton}>
           <Text style={styles.permissionButtonText}>Grant Camera Access</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleExit} style={styles.permissionButton}>
+        <TouchableOpacity onPress={handleExit} style={[styles.permissionButton, styles.exitButton]}>
           <Text style={styles.permissionButtonText}>Go Back</Text>
         </TouchableOpacity>
       </SafeAreaView>
@@ -149,8 +95,8 @@ export default function CameraInterface() {
   if (!device) {
     return (
       <SafeAreaView style={styles.container}>
-        <Text style={styles.permissionText}>No camera device found</Text>
-        <TouchableOpacity onPress={handleExit} style={styles.permissionButton}>
+        <Text style={styles.permissionText}>No camera device found.</Text>
+        <TouchableOpacity onPress={handleExit} style={[styles.permissionButton, styles.exitButton]}>
           <Text style={styles.permissionButtonText}>Go Back</Text>
         </TouchableOpacity>
       </SafeAreaView>
@@ -159,16 +105,23 @@ export default function CameraInterface() {
 
   return (
     <View style={styles.container}>
-      {cameraActive && (
+      {device && appIsActive && (
         <Camera
-          style={StyleSheet.absoluteFillObject}
+          style={StyleSheet.absoluteFill}
           device={device}
           isActive={true}
           frameProcessor={frameProcessor}
+          // pixelFormat="yuv"
+          // frameProcessorFps={15}
         />
       )}
-      {renderPoseOverlay()}
-      <SafeAreaView style={styles.overlay}>
+      <PoseOverlay
+        poseDataShared={poseDataShared}
+        devicePosition={device.position}
+        currentScreenWidth={screenWidth}
+        currentScreenHeight={screenHeight}
+      />
+      <SafeAreaView style={styles.overlayControls}>
         <View style={styles.header}>
           <TouchableOpacity onPress={handleExit} style={styles.closeButton}>
             <Text style={styles.closeButtonText}>✕</Text>
@@ -180,56 +133,21 @@ export default function CameraInterface() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'black',
-  },
-  overlay: {
-    flex: 1,
-    justifyContent: 'space-between',
-  },
-  permissionText: {
-    color: 'white',
-    textAlign: 'center',
-    margin: 10,
-  },
+  container: { flex: 1, backgroundColor: 'black' },
+  permissionText: { color: 'white', textAlign: 'center', marginVertical: 20, fontSize: 16, paddingHorizontal: 20 },
   permissionButton: {
-    backgroundColor: '#6D28D9',
-    margin: 10,
-    padding: 10,
-    borderRadius: 5,
+    backgroundColor: '#6D28D9', marginHorizontal: 30, marginVertical: 10,
+    paddingVertical: 12, paddingHorizontal: 20, borderRadius: 8, alignItems: 'center',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25,
+    shadowRadius: 3.84, elevation: 5,
   },
-  permissionButtonText: {
-    color: 'white',
-    textAlign: 'center',
-  },
-  header: {
-    padding: 10,
-    alignItems: 'flex-start',
-  },
+  exitButton: { backgroundColor: '#555' },
+  permissionButtonText: { color: 'white', textAlign: 'center', fontSize: 16, fontWeight: '500' },
+  overlayControls: { ...StyleSheet.absoluteFillObject, justifyContent: 'space-between' },
+  header: { width: '100%', paddingTop: 10, paddingHorizontal: 10, alignItems: 'flex-start' },
   closeButton: {
-    backgroundColor: '#333',
-    padding: 10,
-    borderRadius: 20,
+    backgroundColor: 'rgba(50, 50, 50, 0.7)', padding: 10, borderRadius: 20,
+    width: 40, height: 40, justifyContent: 'center', alignItems: 'center',
   },
-  closeButtonText: {
-    color: 'white',
-    fontSize: 18,
-  },
-  poseOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  landmarkDot: {
-    position: 'absolute',
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#F87171',
-    borderWidth: 1,
-    borderColor: 'white',
-  },
+  closeButtonText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
 });
