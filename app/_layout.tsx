@@ -1,6 +1,6 @@
 import { Stack } from "expo-router";
 
-// import Logo from "../assets/images/velora-vector.svg";
+import Logo from "../assets/images/velora-vector.svg";
 
 import "../styles/global.css";
 
@@ -16,7 +16,7 @@ export default function RootLayout() {
         headerTitleStyle: {
           fontWeight: "bold",
         },
-        // headerTitle: () => <Logo width={100} height={40} />, // SVG in header
+        headerTitle: () => <Logo width={100} height={40} />, // SVG in header
       }}
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />

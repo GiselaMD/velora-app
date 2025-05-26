@@ -1,4 +1,3 @@
-// CameraInterface.tsx
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   View,
@@ -8,7 +7,7 @@ import {
   Dimensions,
   AppState,
   AppStateStatus,
-  StyleSheet, // Keep for StyleSheet.absoluteFill for the Camera
+  StyleSheet,
 } from "react-native";
 import {
   Camera,
