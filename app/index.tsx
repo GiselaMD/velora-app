@@ -29,9 +29,9 @@ const { width } = Dimensions.get("window");
 
 export default function EntryScreen() {
   const [activeIndex, setActiveIndex] = useState(0);
-  const flatListRef = useRef(null);
+  const flatListRef = useRef<FlatList<{ id: string; quote: string }> | null>(null);
 
-  const renderQuote = ({ item }) => (
+  const renderQuote = ({ item }: { item: { id: string; quote: string } }) => (
     <View className="w-full items-center px-6" style={{ width }}>
       <Text className="text-center text-xl text-white opacity-90">
         {item.quote}
@@ -65,7 +65,7 @@ export default function EntryScreen() {
           </View>
 
           {/* Swipeable Quotes */}
-          <View className="my-6 h-20">
+          <View className="my-6 h-40">
             <FlatList
               ref={flatListRef}
               data={quotes}
@@ -79,10 +79,9 @@ export default function EntryScreen() {
                 setActiveIndex(index);
               }}
             />
-          </View>
 
           {/* Pagination Dots */}
-          <View className="my-4 flex-row">
+            <View className="my-4 flex-row justify-center">
             {quotes.map((_, i) => (
               <View
                 key={i}
@@ -92,6 +91,8 @@ export default function EntryScreen() {
               />
             ))}
           </View>
+          </View>
+
 
           {/* CTA Button */}
           <TouchableOpacity

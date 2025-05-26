@@ -3,7 +3,6 @@ import React from 'react';
 import { View, Text, Image, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
 
 import { BikeType } from '../types';
-// import LocalPoseEstimationModule from '../modules/local-pose-estimation';
 
 // Bike data
 const bikeTypes = [
@@ -48,15 +47,15 @@ export default function BikeTypeScreen() {
       <ScrollView className="flex-1 px-4">
         {/* Title Section */}
         <View className="my-6">
-          <Text className="mb-2 text-3xl font-bold text-gray-900">Select Your Bike Type</Text>
-          <Text className="text-lg text-gray-600">Choose the type of bike you want to fit</Text>
+          <Text className="mb-2 text-3xl font-bold text-gray-900">Select your bike type</Text>
+          <Text className="text-lg text-gray-600">Choose the type of bike you want to analyse your fit</Text>
         </View>
 
         {/* Bike Options */}
         {bikeTypes.map((bike) => (
           <TouchableOpacity
             key={bike.id}
-            className={`mb-4 rounded-3xl border ${selectedBike === bike.id ? 'border-purple-600' : 'border-gray-100'} bg-white p-5 shadow-sm`}
+            className={`mb-4 rounded-3xl border-2 ${selectedBike === bike.id ? 'border-purple-600' : 'border-gray-100'} bg-white p-5 shadow-sm`}
             activeOpacity={0.7}
             onPress={() => handleSelectBike(bike.id)}>
             <View className="flex-row items-start justify-between">
