@@ -1,37 +1,63 @@
-// CameraInterface.js
+// CameraInterface.tsx
 import React, { useState, useEffect, useCallback } from "react";
 import {
-  View, Text, TouchableOpacity, StyleSheet,
-  SafeAreaView, Dimensions, AppState,
+  View,
+  Text,
+  TouchableOpacity,
+  SafeAreaView,
+  Dimensions,
+  AppState,
+  AppStateStatus,
+  Platform,
+  StyleSheet, 
 } from "react-native";
 import {
-  Camera, useCameraDevice, useCameraPermission,
-  useFrameProcessor
-} from 'react-native-vision-camera';
-import { useRunOnJS } from 'react-native-worklets-core';
-import { useSharedValue } from 'react-native-reanimated';
+  Camera,
+  useCameraDevice,
+  useCameraPermission,
+  useFrameProcessor,
+  CameraDevice,
+  Frame,
+} from "react-native-vision-camera";
+import { useRunOnJS } from "react-native-worklets-core";
+import { useSharedValue, SharedValue } from "react-native-reanimated";
 import { router } from "expo-router";
 
+// Assuming these are correctly typed and imported
 import { processPoseEstimation } from '../plugins/frameProcessor';
-import PoseOverlay from '../components/PoseOverlay';
+import PoseOverlay, { PoseData } from '../components/PoseOverlay';
+
+// Define the expected structure of a landmark and the pose data
+interface Landmark {
+  x: number;
+  y: number;
+  z?: number;
+  visibility: number;
+}
+type PoseResultType = Landmark[][];
+interface FrameInfoData {
+  poseResult: PoseResultType | undefined;
+  frameOrientation: Frame['orientation'] | undefined;
+}
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
-export default function CameraInterface() {
+export default function CameraInterface(): JSX.Element {
   const [appIsActive, setAppIsActive] = useState(AppState.currentState === 'active');
   const { hasPermission, requestPermission } = useCameraPermission();
-  const device = useCameraDevice('front');
+  const device: CameraDevice | undefined = useCameraDevice('front');
 
-  const poseDataShared = useSharedValue({
+  const poseDataShared: SharedValue<PoseData> = useSharedValue<PoseData>({
     rawLandmarks: [],
     totalLandmarks: 0,
-    frameOrientation: undefined, // Initialize frameOrientation
+    frameOrientation: undefined,
   });
 
   useEffect(() => {
-    const subscription = AppState.addEventListener('change', nextAppState => {
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
       setAppIsActive(nextAppState === 'active');
-    });
+    };
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
     return () => {
       subscription.remove();
     };
@@ -43,59 +69,67 @@ export default function CameraInterface() {
     }
   }, [hasPermission, requestPermission]);
 
-  const updateFrameInfoWithJS = useCallback((data) => {
-    const { poseResult: rawPoseResult, frameOrientation } = data; // Destructure data
-
+  const updateFrameInfoWithJS = useCallback((data: FrameInfoData) => {
+    const { poseResult: rawPoseResult, frameOrientation } = data;
+    // ... (your existing logic for updating poseDataShared)
     if (rawPoseResult && Array.isArray(rawPoseResult) && rawPoseResult.length > 0) {
       const landmarksArray = rawPoseResult[0];
       if (landmarksArray && landmarksArray.length > 0) {
         poseDataShared.value = {
           rawLandmarks: rawPoseResult,
           totalLandmarks: landmarksArray.length,
-          frameOrientation: frameOrientation, // Store frameOrientation
-        };
-      } else {
-        poseDataShared.value = {
-          rawLandmarks: [],
-          totalLandmarks: 0,
           frameOrientation: frameOrientation,
         };
+      } else {
+        poseDataShared.value = { rawLandmarks: [], totalLandmarks: 0, frameOrientation: frameOrientation };
       }
     } else {
-      poseDataShared.value = {
-        rawLandmarks: [],
-        totalLandmarks: 0,
-        frameOrientation: frameOrientation,
-      };
+      poseDataShared.value = { rawLandmarks: [], totalLandmarks: 0, frameOrientation: frameOrientation };
     }
   }, [poseDataShared]);
 
   const runUpdateFrameInfo = useRunOnJS(updateFrameInfoWithJS, [updateFrameInfoWithJS]);
 
-  const frameProcessor = useFrameProcessor((frame) => {
+  const frameProcessor = useFrameProcessor((frame: Frame) => {
     'worklet';
     try {
-      const result = processPoseEstimation(frame);
-      // Pass both pose result and frame orientation to the JS thread
+      const result: PoseResultType | undefined = processPoseEstimation(frame) as PoseResultType | undefined;
       runUpdateFrameInfo({ poseResult: result, frameOrientation: frame.orientation });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Frame processor error:', error.message || error);
     }
   }, [runUpdateFrameInfo]);
 
-  const handleExit = () => {
+  const handleExit = (): void => {
     router.replace("/");
   };
 
+  // Your logs confirmed these conditions are met when camera should be visible
+  // console.log("Has Permission:", hasPermission);
+  // console.log("Device found:", device ? `ID: ${device.id}` : "No device");
+  // console.log("App is Active:", appIsActive);
+
   if (!hasPermission) {
     return (
-      <SafeAreaView style={styles.container}>
-        <Text style={styles.permissionText}>Camera access is required to continue.</Text>
-        <TouchableOpacity onPress={requestPermission} style={styles.permissionButton}>
-          <Text style={styles.permissionButtonText}>Grant Camera Access</Text>
+      <SafeAreaView className="flex-1 bg-black justify-center items-center">
+        <Text className="text-white text-center my-5 text-base px-5">
+          Camera access is required to continue.
+        </Text>
+        <TouchableOpacity
+          onPress={requestPermission}
+          className="bg-purple-700 mx-7 my-2 py-3 px-5 rounded-lg items-center shadow-md w-4/5"
+        >
+          <Text className="text-white text-center text-base font-medium">
+            Grant Camera Access
+          </Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleExit} style={[styles.permissionButton, styles.exitButton]}>
-          <Text style={styles.permissionButtonText}>Go Back</Text>
+        <TouchableOpacity
+          onPress={handleExit}
+          className="bg-gray-600 mx-7 my-2 py-3 px-5 rounded-lg items-center shadow-md w-4/5"
+        >
+          <Text className="text-white text-center text-base font-medium">
+            Go Back
+          </Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
@@ -103,24 +137,40 @@ export default function CameraInterface() {
 
   if (!device) {
     return (
-      <SafeAreaView style={styles.container}>
-        <Text style={styles.permissionText}>No camera device found.</Text>
-        <TouchableOpacity onPress={handleExit} style={[styles.permissionButton, styles.exitButton]}>
-          <Text style={styles.permissionButtonText}>Go Back</Text>
+      <SafeAreaView className="flex-1 bg-black justify-center items-center">
+        <Text className="text-white text-center my-5 text-base px-5">
+          No camera device found.
+        </Text>
+        <TouchableOpacity
+          onPress={handleExit}
+          className="bg-gray-600 mx-7 my-2 py-3 px-5 rounded-lg items-center shadow-md w-4/5"
+        >
+          <Text className="text-white text-center text-base font-medium">
+            Go Back
+          </Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
-      {device && appIsActive && (
+    <View className="flex-1 bg-black">
+      {device && appIsActive ? ( // Ensure appIsActive is used here
         <Camera
-          style={StyleSheet.absoluteFill}
+          style={StyleSheet.absoluteFill} // Apply StyleSheet.absoluteFill directly
           device={device}
-          isActive={true}
-          frameProcessor={frameProcessor}
+          isActive={appIsActive} // Use your appIsActive state
+          frameProcessor={frameProcessor} // Include your frameProcessor
+          // For frame processors, pixelFormat might be needed depending on the model:
+          // pixelFormat="yuv" // or "rgb"
         />
+      ) : (
+         // Fallback UI if camera isn't active or device not ready
+        <View className="absolute inset-0 justify-center items-center">
+          <Text className="text-white text-lg">
+            {appIsActive ? "Camera initializing or not available..." : "App is not active. Camera paused."}
+          </Text>
+        </View>
       )}
       <PoseOverlay
         poseDataShared={poseDataShared}
@@ -128,33 +178,16 @@ export default function CameraInterface() {
         currentScreenWidth={screenWidth}
         currentScreenHeight={screenHeight}
       />
-      <SafeAreaView style={styles.overlayControls}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={handleExit} style={styles.closeButton}>
-            <Text style={styles.closeButtonText}>✕</Text>
+      <SafeAreaView className={`absolute inset-0 justify-between ${Platform.OS === 'android' ? 'pt-4' : ''}`}>
+        <View className="w-full pt-2.5 px-2.5 items-start">
+          <TouchableOpacity
+            onPress={handleExit}
+            className="bg-black/60 p-2.5 rounded-full w-10 h-10 justify-center items-center"
+          >
+            <Text className="text-white text-lg font-bold">✕</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'black' },
-  permissionText: { color: 'white', textAlign: 'center', marginVertical: 20, fontSize: 16, paddingHorizontal: 20 },
-  permissionButton: {
-    backgroundColor: '#6D28D9', marginHorizontal: 30, marginVertical: 10,
-    paddingVertical: 12, paddingHorizontal: 20, borderRadius: 8, alignItems: 'center',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25,
-    shadowRadius: 3.84, elevation: 5,
-  },
-  exitButton: { backgroundColor: '#555' },
-  permissionButtonText: { color: 'white', textAlign: 'center', fontSize: 16, fontWeight: '500' },
-  overlayControls: { ...StyleSheet.absoluteFillObject, justifyContent: 'space-between' },
-  header: { width: '100%', paddingTop: 10, paddingHorizontal: 10, alignItems: 'flex-start' },
-  closeButton: {
-    backgroundColor: 'rgba(50, 50, 50, 0.7)', padding: 10, borderRadius: 20,
-    width: 40, height: 40, justifyContent: 'center', alignItems: 'center',
-  },
-  closeButtonText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
-});
