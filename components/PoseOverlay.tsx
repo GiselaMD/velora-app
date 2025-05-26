@@ -85,6 +85,7 @@ interface AnimatedConnectionLineProps {
   strokeWidth?: string;
 }
 
+// eslint-disable-next-line react/display-name
 const AnimatedConnectionLine: React.FC<AnimatedConnectionLineProps> = React.memo(
   ({
     poseDataShared,
@@ -92,11 +93,10 @@ const AnimatedConnectionLine: React.FC<AnimatedConnectionLineProps> = React.memo
     index2,
     overlayWidth,
     overlayHeight,
-    // devicePosition, // Removed from active use in mirroring logic
-    strokeColor = "#4ADE80", // Tailwind green-500
+    strokeColor = "#6D28D9", 
     strokeWidth = "2",
   }) => {
-    const animatedProps = useAnimatedProps(() => {
+    const animatedProps = useAnimatedProps((): Partial<{ x1: number; y1: number; x2: number; y2: number; opacity: number }> => {
       'worklet';
       const currentPoseData = poseDataShared.value;
       const landmarks = currentPoseData?.rawLandmarks?.[0]; // Assuming first pose
@@ -129,6 +129,7 @@ const AnimatedConnectionLine: React.FC<AnimatedConnectionLineProps> = React.memo
         stroke: strokeColor,
         strokeWidth: strokeWidth,
         opacity: 1,
+        // stroke and strokeWidth are not valid here; set them on the component instead
       };
     });
     return <AnimatedLineComponent animatedProps={animatedProps} />;
@@ -143,13 +144,13 @@ interface AnimatedLandmarkPointProps {
   devicePosition?: CameraPosition; // Optional
 }
 
+// eslint-disable-next-line react/display-name
 const AnimatedLandmarkPoint: React.FC<AnimatedLandmarkPointProps> = React.memo(
   ({
     poseDataShared,
     landmarkIndex,
     overlayWidth,
     overlayHeight,
-    // devicePosition, // Removed from active use in mirroring logic
   }) => {
     const animatedStyle = useAnimatedStyle(() => {
       'worklet';
@@ -176,8 +177,7 @@ const AnimatedLandmarkPoint: React.FC<AnimatedLandmarkPointProps> = React.memo(
         transform: [{ translateX: 0 }], // Reset transform if previously hidden
       };
     });
-    // Tailwind: absolute w-2 h-2 rounded-full bg-red-400 border border-white
-    return <Animated.View className="absolute w-2 h-2 rounded-full bg-red-400 border border-white" style={animatedStyle} />;
+    return <Animated.View className="absolute w-2 h-2 rounded-full bg-blue-400 border border-white" style={animatedStyle} />;
   }
 );
 
