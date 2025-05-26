@@ -12,8 +12,8 @@ import { useRunOnJS } from 'react-native-worklets-core';
 import { useSharedValue } from 'react-native-reanimated';
 import { router } from "expo-router";
 
-import { processPoseEstimation } from '../plugins/frameProcessor'; // Ensure this path is correct
-import PoseOverlay from '../components/PoseOverlay'; // Ensure this path is correct
+import { processPoseEstimation } from '../plugins/frameProcessor';
+import PoseOverlay from '../components/PoseOverlay';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -22,10 +22,10 @@ export default function CameraInterface() {
   const { hasPermission, requestPermission } = useCameraPermission();
   const device = useCameraDevice('front');
 
-  // `detected` field removed from poseDataShared
   const poseDataShared = useSharedValue({
     rawLandmarks: [],
     totalLandmarks: 0,
+    frameOrientation: undefined, // Initialize frameOrientation
   });
 
   useEffect(() => {
@@ -43,22 +43,30 @@ export default function CameraInterface() {
     }
   }, [hasPermission, requestPermission]);
 
-  // `detected` field removed from updates
-  const updateFrameInfoWithJS = useCallback((rawPoseResult) => {
+  const updateFrameInfoWithJS = useCallback((data) => {
+    const { poseResult: rawPoseResult, frameOrientation } = data; // Destructure data
+
     if (rawPoseResult && Array.isArray(rawPoseResult) && rawPoseResult.length > 0) {
-      const landmarksArray = rawPoseResult[0]; // Assuming first element contains the landmarks
+      const landmarksArray = rawPoseResult[0];
       if (landmarksArray && landmarksArray.length > 0) {
         poseDataShared.value = {
-          rawLandmarks: rawPoseResult, // Store the full raw result (e.g., [[landmark1, landmark2,...]])
+          rawLandmarks: rawPoseResult,
           totalLandmarks: landmarksArray.length,
+          frameOrientation: frameOrientation, // Store frameOrientation
         };
       } else {
-        // No valid landmarks in the result
-        poseDataShared.value = { rawLandmarks: [], totalLandmarks: 0 };
+        poseDataShared.value = {
+          rawLandmarks: [],
+          totalLandmarks: 0,
+          frameOrientation: frameOrientation,
+        };
       }
     } else {
-      // No pose result or empty result
-      poseDataShared.value = { rawLandmarks: [], totalLandmarks: 0 };
+      poseDataShared.value = {
+        rawLandmarks: [],
+        totalLandmarks: 0,
+        frameOrientation: frameOrientation,
+      };
     }
   }, [poseDataShared]);
 
@@ -68,7 +76,8 @@ export default function CameraInterface() {
     'worklet';
     try {
       const result = processPoseEstimation(frame);
-      runUpdateFrameInfo(result);
+      // Pass both pose result and frame orientation to the JS thread
+      runUpdateFrameInfo({ poseResult: result, frameOrientation: frame.orientation });
     } catch (error) {
       console.error('Frame processor error:', error.message || error);
     }
@@ -111,8 +120,6 @@ export default function CameraInterface() {
           device={device}
           isActive={true}
           frameProcessor={frameProcessor}
-          // pixelFormat="yuv"
-          // frameProcessorFps={15}
         />
       )}
       <PoseOverlay

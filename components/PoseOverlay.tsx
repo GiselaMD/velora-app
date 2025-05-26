@@ -6,42 +6,76 @@ import Svg, { Line } from 'react-native-svg';
 
 const AnimatedLineComponent = Animated.createAnimatedComponent(Line);
 
-// Adjust these indices based on YOUR specific pose model's output.
-const POSE_CONNECTIONS = [
-  // Head
-  [0, 1], [1, 2], [2, 3], [3, 7], [0, 4], [4, 5], [5, 6], [6, 8],
-  // Torso
-  [9, 10], [11, 12], [11, 23], [12, 24], [23, 24],
-  // Arms
-  [11, 13], [13, 15], [15, 17], [15, 19], [15, 21], [17, 19], // Left
-  [12, 14], [14, 16], [16, 18], [16, 20], [16, 22], [18, 20], // Right
-  // Legs
-  [23, 25], [25, 27], [27, 29], [27, 31], [29, 31], // Left
-  [24, 26], [26, 28], [28, 30], [28, 32], [30, 32], // Right
+const POSE_CONNECTIONS = [ /* ... your existing connections ... */
+    // Head
+    [0, 1], [1, 2], [2, 3], [3, 7], [0, 4], [4, 5], [5, 6], [6, 8],
+    // Torso
+    [9, 10], [11, 12], [11, 23], [12, 24], [23, 24],
+    // Arms
+    [11, 13], [13, 15], [15, 17], [15, 19], [15, 21], [17, 19], // Left
+    [12, 14], [14, 16], [16, 18], [16, 20], [16, 22], [18, 20], // Right
+    // Legs
+    [23, 25], [25, 27], [27, 29], [27, 31], [29, 31], // Left
+    [24, 26], [26, 28], [28, 30], [28, 32], [30, 32], // Right
 ];
+
+const getScreenCoordinates = (landmarkX, landmarkY, frameOrientation, overlayWidth, overlayHeight) => {
+  'worklet';
+  let screenX = 0;
+  let screenY = 0;
+
+  switch (frameOrientation) {
+    case 'portrait':
+      screenX = landmarkX * overlayWidth;
+      screenY = landmarkY * overlayHeight;
+      break;
+    case 'landscape-left':
+      screenX = landmarkY * overlayWidth;
+      screenY = (1 - landmarkX) * overlayHeight;
+      break;
+    case 'landscape-right':
+      screenX = (1 - landmarkY) * overlayWidth;
+      screenY = landmarkX * overlayHeight;
+      break;
+    case 'portrait-upside-down':
+      screenX = (1 - landmarkX) * overlayWidth;
+      screenY = (1 - landmarkY) * overlayHeight;
+      break;
+    default:
+      screenX = landmarkX * overlayWidth;
+      screenY = landmarkY * overlayHeight;
+  }
+    return { x: screenX, y: screenY - 50 }; //header offset -50
+};
 
 const AnimatedConnectionLine = React.memo(({
   poseDataShared, index1, index2, overlayWidth,
   overlayHeight, devicePosition, strokeColor = "#4ADE80", strokeWidth = "2"
 }) => {
   const animatedProps = useAnimatedProps(() => {
-    const landmarks = poseDataShared.value?.rawLandmarks?.[0];
-    if (!landmarks || index1 >= landmarks.length || !landmarks[index1] ||
+    'worklet';
+    const currentPoseData = poseDataShared.value;
+    const landmarks = currentPoseData?.rawLandmarks?.[0];
+    const frameOrientation = currentPoseData?.frameOrientation;
+
+    if (!landmarks || !frameOrientation ||
+        index1 >= landmarks.length || !landmarks[index1] ||
         index2 >= landmarks.length || !landmarks[index2] ||
         landmarks[index1].visibility < 0.5 || landmarks[index2].visibility < 0.5) {
       return { x1: 0, y1: 0, x2: 0, y2: 0, opacity: 0 };
     }
-    const getCoord = (landmark) => {
-      const x = landmark.x * overlayWidth;
-      return {
-        xPos: devicePosition === 'front' ? overlayWidth - x : x,
-        yPos: landmark.y * overlayHeight,
-      };
-    };
-    const p1 = getCoord(landmarks[index1]);
-    const p2 = getCoord(landmarks[index2]);
+
+    const p1Raw = landmarks[index1];
+    const p2Raw = landmarks[index2];
+
+    let p1Screen = getScreenCoordinates(p1Raw.x, p1Raw.y, frameOrientation, overlayWidth, overlayHeight);
+    let p2Screen = getScreenCoordinates(p2Raw.x, p2Raw.y, frameOrientation, overlayWidth, overlayHeight);
+
+    // Mirroring logic based on devicePosition has been removed here.
+    // The getScreenCoordinates should provide coordinates that align with the visual preview.
+
     return {
-      x1: p1.xPos, y1: p1.yPos, x2: p2.xPos, y2: p2.yPos,
+      x1: p1Screen.x, y1: p1Screen.y, x2: p2Screen.x, y2: p2Screen.y,
       stroke: strokeColor, strokeWidth: strokeWidth, opacity: 1,
     };
   });
@@ -52,16 +86,28 @@ const AnimatedLandmarkPoint = React.memo(({
   poseDataShared, landmarkIndex, overlayWidth, overlayHeight, devicePosition
 }) => {
   const animatedStyle = useAnimatedStyle(() => {
-    const landmark = poseDataShared.value?.rawLandmarks?.[0]?.[landmarkIndex];
-    if (!landmark || landmarkIndex >= (poseDataShared.value?.rawLandmarks?.[0]?.length || 0) || landmark.visibility < 0.5) {
-      return { opacity: 0, transform: [{ translateX: -10000 }] };
+    'worklet';
+    const currentPoseData = poseDataShared.value;
+    const landmark = currentPoseData?.rawLandmarks?.[0]?.[landmarkIndex];
+    const frameOrientation = currentPoseData?.frameOrientation;
+
+    if (!landmark || !frameOrientation ||
+        landmarkIndex >= (currentPoseData?.rawLandmarks?.[0]?.length || 0) ||
+        landmark.visibility < 0.5) {
+      return { opacity: 0, left: 0, top: 0, transform: [{translateX: -10000}] };
     }
-    const x = landmark.x * overlayWidth;
-    const y = landmark.y * overlayHeight;
-    const finalX = devicePosition === 'front' ? overlayWidth - x : x;
+
+    let screenCoords = getScreenCoordinates(landmark.x, landmark.y, frameOrientation, overlayWidth, overlayHeight);
+    let finalX = screenCoords.x;
+
+    // Mirroring logic based on devicePosition has been removed.
+    // finalX is now directly screenCoords.x from the transformation.
+
     return {
-      left: finalX - 4, top: y - 4, opacity: 1,
-      transform: [{ translateX: 0 }],
+      left: finalX - 4,
+      top: screenCoords.y - 4,
+      opacity: 1,
+      transform: [{translateX: 0}],
     };
   });
   return <Animated.View style={[styles.landmarkDot, animatedStyle]} />;
@@ -70,8 +116,7 @@ const AnimatedLandmarkPoint = React.memo(({
 const PoseOverlay = React.memo(({
   poseDataShared, devicePosition, currentScreenWidth, currentScreenHeight,
 }) => {
-  // This should be the maximum number of landmarks your specific model provides.
-  const MAX_LANDMARKS = 33; // For the mock frameProcessor, we used 33. Verify for your model!
+  const MAX_LANDMARKS = 33;
   const landmarkIndices = Array.from({ length: MAX_LANDMARKS }, (_, i) => i);
 
   return (
@@ -82,7 +127,7 @@ const PoseOverlay = React.memo(({
             key={`line-${idx1}-${idx2}-${i}`}
             poseDataShared={poseDataShared} index1={idx1} index2={idx2}
             overlayWidth={currentScreenWidth} overlayHeight={currentScreenHeight}
-            devicePosition={devicePosition}
+            devicePosition={devicePosition} // Still passed, could be used for other logic if needed
           />
         ))}
       </Svg>
@@ -91,7 +136,7 @@ const PoseOverlay = React.memo(({
           key={`dot-${index}`}
           poseDataShared={poseDataShared} landmarkIndex={index}
           overlayWidth={currentScreenWidth} overlayHeight={currentScreenHeight}
-          devicePosition={devicePosition}
+          devicePosition={devicePosition} // Still passed
         />
       ))}
     </View>
