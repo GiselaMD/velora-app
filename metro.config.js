@@ -1,23 +1,19 @@
-const { getDefaultConfig,mergeConfig } = require('expo/metro-config');
+const { getDefaultConfig } = require('expo/metro-config');
 const { withNativeWind } = require('nativewind/metro');
 
 // eslint-disable-next-line no-undef
-const defaultConfig = getDefaultConfig(__dirname);
-const { assetExts, sourceExts } = defaultConfig.resolver;
-/**
- * Metro configuration
- * https://facebook.github.io/metro/docs/configuration
- *
- * @type {import('metro-config').MetroConfig}
- */
-const config = {
-  transformer: {
-    babelTransformerPath: require.resolve('react-native-svg-transformer'),
-  },
-  resolver: {
-    assetExts: assetExts.filter((ext) => ext !== 'svg'),
-    sourceExts: [...sourceExts, 'svg'],
-  },
+const config = getDefaultConfig(__dirname);
+
+// Enable SVG imports as React components
+config.transformer = {
+  ...config.transformer,
+  babelTransformerPath: require.resolve('react-native-svg-transformer'),
 };
 
-module.exports = withNativeWind(mergeConfig(defaultConfig, config), { input: './styles/global.css' });
+config.resolver = {
+  ...config.resolver,
+  assetExts: config.resolver.assetExts.filter((ext) => ext !== 'svg'),
+  sourceExts: [...config.resolver.sourceExts, 'svg'],
+};
+module.exports = withNativeWind(config, { input: './styles/global.css' });
+

@@ -63,9 +63,6 @@ PODS:
   - hermes-engine (0.76.9):
     - hermes-engine/Pre-built (= 0.76.9)
   - hermes-engine/Pre-built (0.76.9)
-  - MediapipePoseEstimation (1.0.0):
-    - ExpoModulesCore
-    - MediaPipeTasksVision (= 0.10.12)
   - MediaPipeTasksCommon (0.10.12)
   - MediaPipeTasksVision (0.10.12):
     - MediaPipeTasksCommon (= 0.10.12)
@@ -1347,7 +1344,7 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - react-native-safe-area-context (4.12.0):
+  - react-native-safe-area-context (4.14.1):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -1360,8 +1357,8 @@ PODS:
     - React-featureflags
     - React-graphics
     - React-ImageManager
-    - react-native-safe-area-context/common (= 4.12.0)
-    - react-native-safe-area-context/fabric (= 4.12.0)
+    - react-native-safe-area-context/common (= 4.14.1)
+    - react-native-safe-area-context/fabric (= 4.14.1)
     - React-NativeModulesApple
     - React-RCTFabric
     - React-rendererdebug
@@ -1370,7 +1367,7 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - react-native-safe-area-context/common (4.12.0):
+  - react-native-safe-area-context/common (4.14.1):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -1391,7 +1388,7 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - react-native-safe-area-context/fabric (4.12.0):
+  - react-native-safe-area-context/fabric (4.14.1):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -1748,7 +1745,7 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - RNReanimated (3.16.2):
+  - RNReanimated (3.16.7):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -1768,10 +1765,10 @@ PODS:
     - ReactCodegen
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
-    - RNReanimated/reanimated (= 3.16.2)
-    - RNReanimated/worklets (= 3.16.2)
+    - RNReanimated/reanimated (= 3.16.7)
+    - RNReanimated/worklets (= 3.16.7)
     - Yoga
-  - RNReanimated/reanimated (3.16.2):
+  - RNReanimated/reanimated (3.16.7):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -1791,9 +1788,9 @@ PODS:
     - ReactCodegen
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
-    - RNReanimated/reanimated/apple (= 3.16.2)
+    - RNReanimated/reanimated/apple (= 3.16.7)
     - Yoga
-  - RNReanimated/reanimated/apple (3.16.2):
+  - RNReanimated/reanimated/apple (3.16.7):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -1814,7 +1811,7 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - RNReanimated/worklets (3.16.2):
+  - RNReanimated/worklets (3.16.7):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -1967,7 +1964,6 @@ DEPENDENCIES:
   - fmt (from `../node_modules/react-native/third-party-podspecs/fmt.podspec`)
   - glog (from `../node_modules/react-native/third-party-podspecs/glog.podspec`)
   - hermes-engine (from `../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)
-  - MediapipePoseEstimation (from `../modules/mediapipe-pose-estimation/ios`)
   - MediaPipeTasksVision (= 0.10.12)
   - RCT-Folly (from `../node_modules/react-native/third-party-podspecs/RCT-Folly.podspec`)
   - RCT-Folly/Fabric (from `../node_modules/react-native/third-party-podspecs/RCT-Folly.podspec`)
@@ -2092,8 +2088,6 @@ EXTERNAL SOURCES:
   hermes-engine:
     :podspec: "../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec"
     :tag: hermes-2024-11-12-RNv0.76.2-5b4aa20c719830dcf5684832b89a6edb95ac3d64
-  MediapipePoseEstimation:
-    :path: "../modules/mediapipe-pose-estimation/ios"
   RCT-Folly:
     :podspec: "../node_modules/react-native/third-party-podspecs/RCT-Folly.podspec"
   RCTDeprecation:
@@ -2249,7 +2243,6 @@ SPEC CHECKSUMS:
   fmt: 01b82d4ca6470831d1cc0852a1af644be019e8f6
   glog: 08b301085f15bcbb6ff8632a8ebaf239aae04e6a
   hermes-engine: 9e868dc7be781364296d6ee2f56d0c1a9ef0bb11
-  MediapipePoseEstimation: c06767284b2cc4a32b59a539012bb611942ebc5f
   MediaPipeTasksCommon: 254e6bff77804b262f6ecf180477142ea551e802
   MediaPipeTasksVision: 78d5c47cd7996b4d815bacba0a52dbf01458dfaf
   RCT-Folly: 7b4f73a92ad9571b9dbdb05bb30fad927fa971e1
@@ -2281,7 +2274,7 @@ SPEC CHECKSUMS:
   React-logger: dbca7bdfd4aa5ef69431362bde6b36d49403cb20
   React-Mapbuffer: 6efad4a606c1fae7e4a93385ee096681ef0300dc
   React-microtasksnativemodule: a645237a841d733861c70b69908ab4a1707b52ad
-  react-native-safe-area-context: 0dfbd139206a79364916959bc8b1a6bea3caba97
+  react-native-safe-area-context: 27b2c38036e0b673b5ade35d54db7aaa3affa717
   react-native-webview: b8f9b1f9bdb081c239e46d9bf030881d2678f25d
   react-native-worklets-core: 6889f57c540415e7319279a821dac9907336d006
   React-nativeconfig: 8efdb1ef1e9158c77098a93085438f7e7b463678
@@ -2312,7 +2305,7 @@ SPEC CHECKSUMS:
   ReactCodegen: 21a52ccddc6479448fc91903a437dd23ddc7366c
   ReactCommon: bfd3600989d79bc3acbe7704161b171a1480b9fd
   RNGestureHandler: 3e17c0c9ceb401041b0e64c8e4c8a057da978a9d
-  RNReanimated: bc6b632bb0076e162721de78bb56b65463fe6c4b
+  RNReanimated: 5ed2b66c32cb3d398e4c12591b3053594fe2fcb9
   RNScreens: 2856a2abe759a5a56946874f76372c9f033af19a
   RNSVG: 81d52481cde97ce0dcc81a55b0310723817088d0
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
