@@ -21,7 +21,7 @@ import { useRunOnJS } from "react-native-worklets-core";
 import { useSharedValue, SharedValue } from "react-native-reanimated";
 import { useNavigation } from "expo-router";
 
-import { processPoseEstimation } from '../../../plugins/frameProcessor';
+import { processPoseEstimation } from '../../../../plugins/frameProcessor';
 import PoseOverlay, { PoseData } from './PoseOverlay';
 
 interface Landmark {
